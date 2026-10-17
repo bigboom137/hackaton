@@ -1,7 +1,7 @@
 /* Toolbar: add node, import/export, reset. */
 $('#addNode').onclick = () => {
   const w = $('#canvasWrap');
-  newNode(w.scrollLeft + 40 + Math.random() * 60, w.scrollTop + 40 + Math.random() * 60);
+  newNode(bx + (w.scrollLeft + 40) / zoom + Math.random() * 60, by + (w.scrollTop + 40) / zoom + Math.random() * 60);
   render();
 };
 
@@ -35,9 +35,9 @@ $('#importFile').onchange = async e => {
     }
     const nums = Object.keys(nodes).map(k => parseInt(k.replace(/\D/g, '')) || 0);
     data = { start: j.start, nodes, counter: Math.max(0, ...nums) + Object.keys(nodes).length };
-    render(); restart();
+    resetView(); render(); restart();
   } catch (err) { alert('Invalid file: ' + err.message); }
   e.target.value = '';
 };
 
-$('#resetBtn').onclick = () => { if (confirm('Discard everything and load the sample?')) { data = sample(); render(); restart(); } };
+$('#resetBtn').onclick = () => { if (confirm('Discard everything and load the sample?')) { data = sample(); resetView(); render(); restart(); } };

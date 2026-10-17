@@ -35,10 +35,16 @@
   <button class="ghost" id="exportJs">Copy as JS</button>
   <button class="danger" id="resetBtn">Reset</button>
   <button class="ghost menu-return" id="menuBtn">Main menu</button>
+  <span class="zoom">
+    <button class="ghost" id="zoomOut" title="Zoom out">−</button>
+    <button class="ghost" id="zoomLabel" title="Reset to 100%">100%</button>
+    <button class="ghost" id="zoomIn" title="Zoom in">+</button>
+    <button class="ghost" id="zoomFit" title="Fit all nodes">Fit</button>
+  </span>
   <span id="status" class="warn"></span>
 </header>
 <main>
-  <div id="canvasWrap"><div id="canvas"><svg id="links"></svg></div></div>
+  <div id="canvasWrap"><div id="sizer"><div id="canvas"><svg id="links"></svg></div></div></div>
   <aside id="side">
     <h2>Preview Player <span><button class="ghost" id="restart">↻ Restart</button></span></h2>
     <div id="preview"></div>
@@ -47,6 +53,7 @@
 </div>
 <script src="js/state.js"></script>
 <script src="js/editor.js"></script>
+<script src="js/view.js"></script>
 <script src="js/player.js"></script>
 <script src="js/io.js"></script>
 <script>
@@ -63,3 +70,5 @@ document.querySelector('#menuCredits').onclick = () => { menuNote.textContent = 
 </script>
 </body>
 </html>
+
+
