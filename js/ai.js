@@ -13,13 +13,20 @@ document.body.appendChild(aiToast);
 
 const clip = (v, max) => String(v ?? '').trim().slice(0, max);
 
-/* POST to the worker. Returns the parsed JSON, or null after showing the problem to the user. */
+/* Run an AI request: straight to Gemini with the user's own key if they set one (it never
+   leaves this browser except to Google), otherwise through the worker.
+   Returns the parsed JSON, or null after showing the problem to the user. */
 async function callAI(body) {
-  const url = settings.aiUrl.trim() || AI_DEFAULT_URL;
   if (aiRunning) return null;
+  // Own key: from Settings, else from the gitignored js/local-config.js (local testing only).
+  const key = settings.geminiKey.trim() || window.QUESTLINE_LOCAL?.geminiKey || '';
+  const url = settings.aiUrl.trim() || AI_DEFAULT_URL;
   aiRunning = true; aiToast.hidden = false;
   const abort = new AbortController(), timer = setTimeout(() => abort.abort(), 90000);
   try {
+    if (key) {
+      return await QuestlineAI.callGemini(key, settings.aiModel || QuestlineAI.DEFAULT_MODEL, QuestlineAI.buildRequest(body), abort.signal);
+    }
     const res = await fetch(url, {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body), signal: abort.signal,
@@ -28,8 +35,10 @@ async function callAI(body) {
     if (!res.ok) throw new Error(out.error || `The AI server returned HTTP ${res.status}.`);
     return out;
   } catch (err) {
+    const where = key ? 'Google' : 'the AI server';
     const msg = err.name === 'AbortError' ? 'The AI took too long to answer. Try again.'
-      : err instanceof TypeError ? `Couldn't reach the AI server. Check the URL in Settings → AI. (${err.message})`
+      : err instanceof TypeError ? `Couldn't reach ${where}. Check your connection${key ? '' : ' and the URL in Settings → AI'}. (${err.message})`
+      : key && /api key|permission|unauthenticated/i.test(err.message) ? `${err.message}\n\nCheck the Gemini API key in Settings → AI.`
       : err.message;
     notify('AI request failed', msg);
     return null;
@@ -153,7 +162,6 @@ function updateAiHint() { aiHint.hidden = aiHintDismissed || storyHasContent(); 
 canvas.addEventListener('input', updateAiHint);
 $('#aiHintClose').onclick = () => { aiHintDismissed = true; updateAiHint(); };
 
-$('#aiGenerateBtn').onclick = aiGenerate;
 $('#aiToolbarBtn').onclick = aiGenerate;
 $('#aiHintBtn').onclick = aiGenerate;
 // Home screen: open the studio first (generating needs the canvas visible to lay out), then ask.

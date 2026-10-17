@@ -171,7 +171,7 @@ function nodeMenu(id) {
     { label: 'Add choice', action: () => { data.nodes[id].choices.push({ text: '', to: '' }); render(); } },
     { label: 'Add choice → new node', action: () => addLinked(id) },
     { label: 'Duplicate', action: () => duplicateNode(id) },
-    { label: '✨ Expand with AI…', action: () => aiExpand(id) },
+    ...(settings.hideAi ? [] : [{ label: '✨ Expand with AI…', action: () => aiExpand(id) }]),
     '-',
     { label: 'Delete node', danger: true, action: () => deleteNode(id) },
   ];
@@ -179,7 +179,7 @@ function nodeMenu(id) {
 function canvasMenu(x, y) {
   return [
     { label: 'Add node here', action: () => { selectedId = newNode(x, y); render(); } },
-    { label: '✨ Generate story with AI…', action: aiGenerate },
+    ...(settings.hideAi ? [] : [{ label: '✨ Generate story with AI…', action: aiGenerate }]),
     '-',
     { label: 'Fit all nodes', action: fitView },
     { label: 'Reset zoom to 100%', action: () => setZoom(1) },

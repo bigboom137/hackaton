@@ -3,7 +3,9 @@ const SETTINGS_KEY = 'npc-dialogue-studio-settings-v1';
 const DEFAULT_SETTINGS = {
   snap: false, grid: true, confirmDelete: true, defaultSpeaker: 'NPC',
   typewriter: false, textSpeed: 45, accent: '#7c8cff', textSize: 14, theme: 'system',
-  aiUrl: '', // Questline AI worker URL (worker/README.md)
+  aiUrl: '', // Questline AI worker URL (worker/README.md); blank = built-in
+  geminiKey: '', aiModel: 'gemini-3.5-flash-lite', // own-key mode: calls Gemini directly from this browser
+  hideAi: false, // hides every .ai-only element and the AI right-click entries
 };
 const ACCENTS = { Periwinkle: '#7c8cff', Violet: '#a77cff', Teal: '#3cc7b4', Gold: '#d6a84f', Rose: '#ff7aa2' };
 
@@ -25,6 +27,7 @@ function applySettings() {
   root.setProperty('--line', settings.accent);
   document.body.style.fontSize = settings.textSize + 'px';
   document.body.classList.toggle('no-grid', !settings.grid);
+  document.body.classList.toggle('no-ai', settings.hideAi);
   // Node sizes depend on text size, so re-measure the canvas if it's showing.
   if (!$('#studio').hidden) { updateBounds(); drawLinks(); }
 }

@@ -19,7 +19,7 @@
     <p class="title-subtitle">Every choice leaves a mark.</p>
     <nav class="menu-actions" aria-label="Main menu">
       <button id="playBtn" class="menu-primary"><span>▶</span> Begin your journey</button>
-      <button id="menuAi" class="menu-ai"><span>✨</span> Write a story with AI</button>
+      <button id="menuAi" class="menu-ai ai-only"><span>✨</span> Write a story with AI</button>
       <button id="continueBtn" class="menu-secondary">Continue story <span>↗</span></button>
       <button id="menuLoad" class="menu-secondary">Load save</button>
       <button id="menuSettings" class="menu-secondary">Settings</button>
@@ -31,14 +31,13 @@
 <header>
   <h1><button class="brand-home" id="menuBtn" aria-label="Return to main menu">Questline</button><span class="studio-label">STORY STUDIO</span></h1>
   <button id="addNode">+ Add node</button>
-  <button class="ai-btn" id="aiToolbarBtn" title="Generate a branching conversation with AI">✨<span class="ai-btn-label"> Generate with AI</span></button>
+  <button class="ai-btn ai-only" id="aiToolbarBtn" title="Generate a branching conversation with AI">✨<span class="ai-btn-label"> Generate with AI</span></button>
   <div class="dropdown">
     <button class="ghost" id="menuToggle" aria-haspopup="true" aria-expanded="false">☰ Menu ▾</button>
     <div class="dropdown-panel" id="menuPanel" role="menu" hidden>
       <button role="menuitem" id="savesBtn">Save / Load…</button>
       <hr>
       <button role="menuitem" id="newBtn">New blank story</button>
-      <button role="menuitem" id="aiGenerateBtn">✨ Generate with AI…</button>
       <hr>
       <button role="menuitem" id="importBtn">Import JSON…</button>
       <button role="menuitem" id="exportBtn">Export JSON</button>
@@ -60,7 +59,7 @@
 </header>
 <main>
   <div id="canvasWrap"><div id="sizer"><div id="canvas"><svg id="links"></svg></div></div></div>
-  <div class="ai-hint" id="aiHint" hidden>
+  <div class="ai-hint ai-only" id="aiHint" hidden>
     <button class="ai-hint-close" id="aiHintClose" title="Dismiss" aria-label="Dismiss">✕</button>
     <strong>Not sure where to start?</strong>
     <span>Describe an NPC and let AI write a branching conversation, or just start typing in the node.</span>
@@ -109,8 +108,15 @@
     </fieldset>
     <fieldset>
       <legend>AI</legend>
+      <label class="set-row"><span>Hide AI features</span><input type="checkbox" data-set="hideAi"></label>
+      <div class="set-group ai-only">
+      <label class="set-row"><span>Your Gemini API key</span><input type="password" class="wide" data-set="geminiKey" placeholder="Optional" spellcheck="false" autocomplete="off"></label>
+      <label class="set-row"><span>Model (with your key)</span>
+        <select class="wide" data-set="aiModel"><option value="gemini-3.5-flash-lite">Flash-Lite (faster)</option><option value="gemini-3.8-flash">Flash (better)</option></select></label>
+      <p class="set-note">With a key, AI requests go straight from this browser to Google using your own free quota. The key is saved only in this browser. Get one at <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>.</p>
       <label class="set-row"><span>AI server URL</span><input type="text" class="wide" data-set="aiUrl" placeholder="Built-in server" spellcheck="false" autocomplete="off"></label>
-      <p class="set-note">Leave blank to use the built-in Questline AI server. To use your own, deploy the worker in <code>worker/</code> and paste its URL.</p>
+      <p class="set-note">Used when no key is set. Leave blank for the built-in Questline AI server, or deploy your own from <code>worker/</code>.</p>
+      </div>
     </fieldset>
     <fieldset>
       <legend>Data</legend>
@@ -127,6 +133,9 @@
 <script src="js/io.js"></script>
 <script src="js/saves.js"></script>
 <script src="js/settings.js"></script>
+<!-- Optional, gitignored: a private API key for local testing. Missing on the live site (harmless 404). -->
+<script src="js/local-config.js"></script>
+<script src="js/ai-core.js"></script>
 <script src="js/ai.js"></script>
 <script>
 const titleScreen = document.querySelector('#titleScreen');
