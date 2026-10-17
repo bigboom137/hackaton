@@ -10,6 +10,9 @@ function restart() {
   visit(data.start);
 }
 
+/* Restart the preview at a given node instead of the start. */
+function previewFrom(id) { preview.innerHTML = ''; visit(id); }
+
 function visit(id) {
   const n = data.nodes[id];
   activeId = id;
