@@ -87,5 +87,9 @@ body { min-height:100vh; height:100vh; overflow:hidden; }
 .menu-secondary:disabled { opacity:.4; cursor:not-allowed; transform:none !important; }
 .studio header h1 { display:flex; align-items:center; gap:10px; }
 .studio-label { color:var(--muted); font-size:9px; letter-spacing:.15em; }
-.menu-return { margin-left:auto; }
-@media(max-width:650px) { .title-orb { width:180px; } .title-landscape { height:23vh; } .title-content { margin-top:-2vh; } .title-subtitle { margin-bottom:28px; } .title-footer { margin-top:22px; } .studio header h1 { width:100%; } .menu-return { margin-left:0; } }
+@media(max-width:650px) { .title-orb { width:180px; } .title-landscape { height:23vh; } .title-content { margin-top:-2vh; } .title-subtitle { margin-bottom:28px; } .title-footer { margin-top:22px; } .studio header h1 { width:100%; } }
+
+/* The studio title is the home control. */
+.studio .brand-home { padding:0; border:0; border-radius:0; background:transparent; color:inherit; font:inherit; line-height:inherit; cursor:pointer; }
+.studio .brand-home:hover { filter:none; color:#f6e5c3; }
+.studio .brand-home:focus-visible { outline:2px solid var(--accent); outline-offset:4px; }

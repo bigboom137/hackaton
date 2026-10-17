@@ -27,7 +27,7 @@ function updateBounds() {
   wrap.scrollLeft += dx; wrap.scrollTop += dy;
 }
 
-/* Zoom, keeping the point under (mx, my) — relative to the viewport — fixed. */
+/* Zoom, keeping the point under the cursor fixed. */
 function setZoom(z, mx = wrap.clientWidth / 2, my = wrap.clientHeight / 2) {
   z = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
   const cx = (wrap.scrollLeft + mx) / zoom, cy = (wrap.scrollTop + my) / zoom;
@@ -54,10 +54,10 @@ wrap.addEventListener('wheel', e => {
   setZoom(zoom * Math.exp(-e.deltaY * 0.002), e.clientX - r.left, e.clientY - r.top);
 }, { passive: false });
 
-/* Drag empty space to pan. */
+/* Left-drag empty space or middle-drag anywhere to pan. */
 let pan = null;
 wrap.addEventListener('mousedown', e => {
-  if (e.button !== 0 || e.target.closest('.node')) return;
+  if ((e.button !== 0 && e.button !== 1) || (e.button === 0 && e.target.closest('.node'))) return;
   e.preventDefault(); // don't start a text selection while panning
   pan = { x: e.clientX, y: e.clientY, sl: wrap.scrollLeft, st: wrap.scrollTop };
   wrap.classList.add('panning');
