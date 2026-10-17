@@ -11,7 +11,7 @@
 :root {
   --font:'Source Code Pro', ui-monospace, Menlo, Consolas, monospace;
   --bg:#1b1d2a; --panel:#242738; --border:#3d4262; --ghost:#3a3f5c; --field:#1b1d2a;
-  --text:#e8eaf6; --muted:#8a8fa8; --accent:#7c8cff; --gold:#d6b56f; --bad:#ff6b81;
+  --text:#e8eaf6; --muted:#8a8fa8; --accent:#7c8cff; --gold:#d6b56f; --bad:#ff6b81; --good:#5fd38d; --warn:#f0b35a;
 }
 * { box-sizing:border-box; }
 html, body { margin:0; height:100%; overflow:hidden; background:var(--bg); color:var(--text); font:14px var(--font); }
@@ -25,7 +25,6 @@ kbd { font:inherit; font-size:11px; padding:0 4px; border:1px solid #fff5; borde
 #hud > * { pointer-events:auto; }
 .hud-keys { background:#000a; padding:6px 10px; border-radius:6px; font-size:12px; color:#d8dbef; margin-right:auto; }
 
-#toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#000c; padding:8px 14px; border-radius:6px; font-size:13px; }
 
 #dlg { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); width:min(720px, calc(100vw - 32px));
   background:#151724f2; border:2px solid var(--border); border-radius:10px; padding:14px 18px 10px; box-shadow:0 10px 40px #0009; }
@@ -53,13 +52,22 @@ kbd { font:inherit; font-size:11px; padding:0 4px; border:1px solid #fff5; borde
 .card h2 { margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); }
 .drop { border:2px dashed var(--border); border-radius:8px; padding:18px 12px; text-align:center; display:flex; flex-direction:column; gap:12px; align-items:center; }
 .drop.over { border-color:var(--accent); background:#7c8cff14; }
+.drop { transition:border-color .3s, background .3s; }
+.drop.ok { border-color:var(--good); background:#5fd38d14; }
+.drop.bad { border-color:var(--bad); background:#ff6b8114; }
+.import-status { margin:0; font-size:13px; line-height:1.5; }
+.import-status:empty { display:none; }
+.import-status.ok { color:var(--good); }
+.import-status.bad { color:var(--bad); }
+.import-status .warn-line { display:block; color:var(--warn); font-size:12px; }
+@keyframes flash { from { box-shadow:0 0 0 2px var(--good); background:#5fd38d22; } to { box-shadow:0 0 0 2px transparent; } }
+#npcList li.flash { animation:flash 1.8s ease-out; }
 .drop-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
 .give { color:var(--muted); font-size:12px; display:flex; gap:8px; align-items:center; }
 .menu-foot { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; color:var(--muted); font-size:12px; }
 .menu-foot a { color:var(--text); }
-#toast { z-index:20; }
 .modal { z-index:10; position:fixed; inset:0; background:#0009; display:flex; align-items:center; justify-content:center; padding:16px; }
-.modal[hidden], #dlg[hidden], #toast[hidden] { display:none; }
+.modal[hidden], #dlg[hidden] { display:none; }
 .modal-box { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:18px 20px; width:min(620px, 100%); max-height:90vh; overflow:auto; }
 .modal-box h2 { margin:0 0 10px; font-size:16px; display:flex; justify-content:space-between; align-items:center; }
 .note { color:var(--muted); font-size:12px; line-height:1.5; }
@@ -91,7 +99,6 @@ textarea { width:100%; height:240px; font:12px var(--font); color:var(--text); b
   <button id="menuBtn">Menu <kbd>Esc</kbd></button>
 </div>
 
-<div id="toast" hidden></div>
 
 <div id="dlg" hidden>
   <div class="dlg-head"><span id="dlgWho"></span><span id="dlgNode" title="Node id in Questline"></span></div>
@@ -117,6 +124,7 @@ textarea { width:100%; height:240px; font:12px var(--font); color:var(--text); b
           <button class="ghost" id="pasteBtn">Paste Copy as JS…</button>
         </div>
         <label class="give">Give it to <select id="importTarget"></select></label>
+        <p class="import-status" id="importStatus" role="status" aria-live="polite"></p>
       </div>
     </section>
 
@@ -390,6 +398,7 @@ function renderMenu() {
     if (src.startsWith('save:') && !opts.some(o => o[0] === src)) opts.push([src, src.slice(5) + ' (missing)']);
     const { label, bad } = dialogueFor(npc);
     const li = document.createElement('li');
+    li.dataset.id = npc.id;
     li.innerHTML = `<span class="who"><span class="dot" style="background:${npc.look.shirt}"></span>${esc(npc.name)}</span>
       <select>${opts.map(([v, t]) => `<option value="${esc(v)}"${v === src ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
       <button class="ghost" data-act="file">File…</button><button class="ghost" data-act="paste">Paste…</button>
@@ -401,17 +410,30 @@ function renderMenu() {
   }
 }
 
+/* Feedback for imports: a status line in the import box, plus a flash on the villagers that changed. */
+const importStatus = $('#importStatus');
+function showImport(ok, html) {
+  importStatus.className = 'import-status ' + (ok ? 'ok' : 'bad');
+  importStatus.innerHTML = html;
+  drop.classList.remove('ok', 'bad'); void drop.offsetWidth; drop.classList.add(ok ? 'ok' : 'bad');
+}
+
 function setCustom(npcs, data, name) {
-  normalize(data); // throws if invalid
+  const tree = normalize(data); // throws if invalid
   for (const npc of npcs) assign[npc.id] = { src: 'custom', data, name };
   saveAssign(); renderMenu();
-  toast(`${npcs.length === NPCS.length ? 'Everyone' : npcs.map(n => n.name).join(', ')} now ${npcs.length > 1 ? 'use' : 'uses'} ${name}`);
+  for (const npc of npcs) npcList.querySelector(`[data-id="${npc.id}"]`)?.classList.add('flash');
+  const count = Object.keys(tree.nodes).length;
+  const broken = Object.values(tree.nodes).flatMap(n => n.choices).filter(c => c.next && !tree.nodes[c.next]).length;
+  const who = npcs.length === NPCS.length ? 'everyone' : npcs.map(n => n.name).join(', ');
+  showImport(true, `✓ Imported <b>${esc(name)}</b> → ${esc(who)} · ${count} node${count === 1 ? '' : 's'}, starts at "${esc(tree.start)}"` +
+    (broken ? `<span class="warn-line">⚠ ${broken} choice${broken === 1 ? ' points' : 's point'} to a missing node</span>` : ''));
 }
 
 async function importFromFile(f, npcs) {
   if (!f) return;
   try { setCustom(npcs, JSON.parse(await f.text()), f.name); }
-  catch (err) { toast(`Couldn't use ${f.name}: ${err.message}`); }
+  catch (err) { showImport(false, `✕ Couldn't import <b>${esc(f.name)}</b>: ${esc(err.message)}`); }
 }
 importFile.onchange = e => { const f = e.target.files[0]; e.target.value = ''; importFromFile(f, importFor); };
 $('#chooseFile').onclick = () => { importFor = chosenTargets(); importFile.click(); };
@@ -436,8 +458,6 @@ function play() { started = true; $('#playBtn').textContent = '▶ Resume'; menu
 $('#playBtn').onclick = play;
 $('#menuBtn').onclick = openMenu;
 
-let toastTimer;
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, 2600); }
 
 /* ---------- Input ---------- */
 const keys = new Set();
