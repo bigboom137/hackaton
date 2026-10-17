@@ -153,7 +153,8 @@ function finishLinkDrag(e) {
   if (link.moved) {
     const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('.node');
     const choice = data.nodes[link.fromId]?.choices[link.choiceIndex];
-    const targetId = target?.dataset.id || link.targetId;
+    // Use the release position, not the last node hovered while dragging.
+    const targetId = target?.dataset.id || '';
     if (choice) {
       choice.to = targetId || '';
       if (targetId) selectedId = targetId;
