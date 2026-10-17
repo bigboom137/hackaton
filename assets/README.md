@@ -1,5 +1,9 @@
 # Questline home screen art
 
+## Favicon
+
+Add or replace `favicon.png` in this folder to change the browser tab icon. Use a square PNG; 300 x 300 px is a good source size. Browsers scale it down automatically. Refresh the page after replacing it; if the old icon remains, clear the browser's cached favicon.
+
 - Dark-mode home background: `home-background.png` or `home-background.svg` (moonlit castle above a misty valley).
 - Light-mode home background: `home-background-light.png` or `home-background-light.svg` (the same scene by day).
 
