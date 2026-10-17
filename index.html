@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NPC Dialogue Branching Studio</title>
+<style>
+  :root { --bg:#1b1d2a; --panel:#242738; --node:#2e3248; --line:#7c8cff; --text:#e8eaf6; --muted:#8a8fa8; --accent:#7c8cff; --good:#5fd38d; --bad:#ff6b81; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px system-ui, sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; }
+  header { display:flex; gap:8px; align-items:center; padding:8px 12px; background:var(--panel); border-bottom:1px solid #000; flex-wrap:wrap; }
+  header h1 { font-size:16px; margin:0 12px 0 0; }
+  button { background:var(--accent); color:#fff; border:0; border-radius:4px; padding:6px 10px; cursor:pointer; font:inherit; }
+  button.ghost { background:#3a3f5c; }
+  button.danger { background:var(--bad); }
+  button:hover { filter:brightness(1.1); }
+  main { flex:1; display:flex; min-height:0; }
+  #canvasWrap { flex:1; position:relative; overflow:auto; background-image:radial-gradient(#33374d 1px, transparent 1px); background-size:20px 20px; }
+  #canvas { position:relative; width:3000px; height:2000px; }
+  svg#links { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .node { position:absolute; width:260px; background:var(--node); border:2px solid #3d4262; border-radius:8px; box-shadow:0 4px 10px #0006; }
+  .node.start { border-color:var(--good); }
+  .node.active { border-color:#ffd166; }
+  .node .head { display:flex; gap:6px; align-items:center; padding:6px; cursor:move; background:#00000030; border-radius:6px 6px 0 0; }
+  .node .id { color:var(--muted); font-size:11px; white-space:nowrap; }
+  .node input, .node textarea { width:100%; background:#1b1d2a; color:var(--text); border:1px solid #3d4262; border-radius:4px; padding:4px 6px; font:inherit; }
+  .node textarea { resize:vertical; min-height:56px; margin:0; }
+  .node .body { padding:6px; display:flex; flex-direction:column; gap:6px; }
+  .choice { display:flex; gap:4px; align-items:center; position:relative; }
+  .choice select { background:#1b1d2a; color:var(--text); border:1px solid #3d4262; border-radius:4px; max-width:84px; padding:4px 2px; font:inherit; }
+  .mini { padding:2px 6px; background:#3a3f5c; }
+  #side { width:340px; background:var(--panel); border-left:1px solid #000; display:flex; flex-direction:column; }
+  #side h2 { font-size:14px; margin:0; padding:10px 12px; border-bottom:1px solid #000; display:flex; justify-content:space-between; align-items:center; }
+  #preview { flex:1; overflow:auto; padding:12px; display:flex; flex-direction:column; gap:8px; }
+  .bubble { background:var(--node); padding:8px 10px; border-radius:8px; max-width:90%; }
+  .bubble .who { font-size:11px; color:var(--accent); font-weight:bold; margin-bottom:2px; }
+  .bubble.you { align-self:flex-end; background:var(--accent); }
+  .opt { display:block; width:100%; text-align:left; background:#3a3f5c; margin-top:6px; }
+  .opt.dead { background:#4a3340; }
+  .end { text-align:center; color:var(--muted); font-style:italic; }
+  .warn { color:var(--bad); font-size:11px; }
+  input[type=file] { display:none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🗨️ NPC Dialogue Branching Studio</h1>
+  <button id="addNode">+ Add node</button>
+  <button class="ghost" id="exportBtn">Export JSON</button>
+  <button class="ghost" id="importBtn">Import JSON</button>
+  <input type="file" id="importFile" accept=".json,application/json">
+  <button class="ghost" id="exportJs">Copy as JS</button>
+  <button class="danger" id="resetBtn">Reset</button>
+  <span id="status" class="warn"></span>
+</header>
+<main>
+  <div id="canvasWrap"><div id="canvas"><svg id="links"></svg></div></div>
+  <aside id="side">
+    <h2>Preview Player <span><button class="ghost" id="restart">↻ Restart</button></span></h2>
+    <div id="preview"></div>
+  </aside>
+</main>
+
+<script>
+const KEY = 'npc-dialogue-studio-v1';
+const $ = s => document.querySelector(s);
+const canvas = $('#canvas'), svg = $('#links'), preview = $('#preview');
+
+function sample() {
+  return {
+    start: 'n1', counter: 4,
+    nodes: {
+      n1: { speaker: 'Guard', text: 'Halt! State your business in Eldoria.', x: 40, y: 40,
+            choices: [{ text: 'I seek the king.', to: 'n2' }, { text: 'Just passing through.', to: 'n3' }] },
+      n2: { speaker: 'Guard', text: 'The king sees no one today. Come back tomorrow.', x: 400, y: 20, choices: [] },
+      n3: { speaker: 'Guard', text: 'Then move along, traveler. And keep your sword sheathed.', x: 400, y: 240, choices: [] },
+    }
+  };
+}
+
+let data = load();
+let activeId = null;
+
+function load() {
+  try { const s = localStorage.getItem(KEY); if (s) return JSON.parse(s); } catch (e) {}
+  return sample();
+}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+/* ---------- editor ---------- */
+function render() {
+  canvas.querySelectorAll('.node').forEach(n => n.remove());
+  const ids = Object.keys(data.nodes);
+  for (const id of ids) {
+    const n = data.nodes[id];
+    const el = document.createElement('div');
+    el.className = 'node' + (id === data.start ? ' start' : '') + (id === activeId ? ' active' : '');
+    el.id = 'el-' + id;
+    el.style.left = n.x + 'px'; el.style.top = n.y + 'px';
+    const opts = (sel) => `<option value="">— end —</option>` +
+      ids.map(o => `<option value="${o}" ${o === sel ? 'selected' : ''}>${o}</option>`).join('');
+    el.innerHTML = `
+      <div class="head" data-drag="${id}">
+        <span class="id">${id}</span>
+        <input data-f="speaker" value="${esc(n.speaker)}" placeholder="Speaker">
+        <button class="mini" data-act="start" title="Set as start">▶</button>
+        <button class="mini" data-act="del" title="Delete node">✕</button>
+      </div>
+      <div class="body">
+        <textarea data-f="text" placeholder="What does the NPC say?">${esc(n.text)}</textarea>
+        ${n.choices.map((c, i) => `
+          <div class="choice" data-i="${i}">
+            <input data-c="text" value="${esc(c.text)}" placeholder="Player reply">
+            <select data-c="to">${opts(c.to)}</select>
+            <button class="mini" data-act="rmchoice">−</button>
+          </div>`).join('')}
+        <div><button class="ghost" data-act="addchoice">+ Choice</button>
+        <button class="ghost" data-act="addlinked" title="Add choice leading to a new node">+ Choice → new node</button></div>
+      </div>`;
+    el.dataset.id = id;
+    canvas.appendChild(el);
+  }
+  drawLinks();
+  validate();
+  save();
+}
+
+function drawLinks() {
+  let html = `<defs><marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8z" fill="#7c8cff"/></marker></defs>`;
+  for (const [id, n] of Object.entries(data.nodes)) {
+    const a = $('#el-' + id);
+    n.choices.forEach((c, i) => {
+      const b = c.to && $('#el-' + c.to);
+      if (!a || !b) return;
+      const row = a.querySelectorAll('.choice')[i];
+      const x1 = a.offsetLeft + a.offsetWidth, y1 = a.offsetTop + (row ? row.offsetTop + row.offsetHeight / 2 : 20);
+      const x2 = b.offsetLeft, y2 = b.offsetTop + 20;
+      const dx = Math.max(40, Math.abs(x2 - x1) / 2);
+      html += `<path d="M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}" fill="none" stroke="#7c8cff" stroke-width="2" marker-end="url(#ah)"/>`;
+    });
+  }
+  svg.innerHTML = html;
+}
+
+function validate() {
+  const msgs = [];
+  if (!data.nodes[data.start]) msgs.push('No start node');
+  for (const [id, n] of Object.entries(data.nodes))
+    n.choices.forEach(c => { if (c.to && !data.nodes[c.to]) msgs.push(`${id} links to missing ${c.to}`); });
+  $('#status').textContent = msgs.join(' · ');
+}
+
+function newNode(x, y) {
+  const id = 'n' + (++data.counter);
+  data.nodes[id] = { speaker: 'NPC', text: '', x, y, choices: [] };
+  return id;
+}
+
+canvas.addEventListener('input', e => {
+  const el = e.target.closest('.node'); if (!el) return;
+  const n = data.nodes[el.dataset.id];
+  if (e.target.dataset.f) n[e.target.dataset.f] = e.target.value;
+  if (e.target.dataset.c) n.choices[+e.target.closest('.choice').dataset.i][e.target.dataset.c] = e.target.value;
+  save();
+});
+canvas.addEventListener('change', e => { if (e.target.dataset.c === 'to') render(); });
+
+canvas.addEventListener('click', e => {
+  const act = e.target.dataset.act; if (!act) return;
+  const el = e.target.closest('.node'), id = el.dataset.id, n = data.nodes[id];
+  if (act === 'start') data.start = id;
+  else if (act === 'addchoice') n.choices.push({ text: '', to: '' });
+  else if (act === 'addlinked') {
+    const to = newNode(n.x + 320, n.y + n.choices.length * 120);
+    n.choices.push({ text: '', to });
+  }
+  else if (act === 'rmchoice') n.choices.splice(+e.target.closest('.choice').dataset.i, 1);
+  else if (act === 'del') {
+    if (!confirm(`Delete node ${id}?`)) return;
+    delete data.nodes[id];
+    for (const o of Object.values(data.nodes)) o.choices.forEach(c => { if (c.to === id) c.to = ''; });
+    if (data.start === id) data.start = Object.keys(data.nodes)[0] || '';
+  }
+  render();
+});
+
+/* drag nodes */
+let drag = null;
+canvas.addEventListener('mousedown', e => {
+  const h = e.target.closest('.head');
+  if (!h || e.target.closest('input,button')) return;
+  const el = h.parentElement, n = data.nodes[el.dataset.id];
+  drag = { el, n, ox: e.clientX - n.x, oy: e.clientY - n.y };
+});
+window.addEventListener('mousemove', e => {
+  if (!drag) return;
+  drag.n.x = Math.max(0, e.clientX - drag.ox); drag.n.y = Math.max(0, e.clientY - drag.oy);
+  drag.el.style.left = drag.n.x + 'px'; drag.el.style.top = drag.n.y + 'px';
+  drawLinks();
+});
+window.addEventListener('mouseup', () => { if (drag) { drag = null; save(); } });
+
+/* ---------- toolbar ---------- */
+$('#addNode').onclick = () => {
+  const w = $('#canvasWrap');
+  newNode(w.scrollLeft + 40 + Math.random() * 60, w.scrollTop + 40 + Math.random() * 60);
+  render();
+};
+function exportData() {
+  const out = { start: data.start, nodes: {} };
+  for (const [id, n] of Object.entries(data.nodes))
+    out.nodes[id] = { speaker: n.speaker, text: n.text, choices: n.choices.map(c => ({ text: c.text, next: c.to || null })) };
+  return out;
+}
+$('#exportBtn').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(exportData(), null, 2)], { type: 'application/json' }));
+  a.download = 'dialogue.json'; a.click(); URL.revokeObjectURL(a.href);
+};
+$('#exportJs').onclick = async () => {
+  const code = 'const dialogue = ' + JSON.stringify(exportData(), null, 2) + ';\n';
+  try { await navigator.clipboard.writeText(code); $('#status').textContent = 'Copied!'; } catch (e) { prompt('Copy:', code); }
+};
+$('#importBtn').onclick = () => $('#importFile').click();
+$('#importFile').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const j = JSON.parse(await f.text()), nodes = {}; let i = 0;
+    for (const [id, n] of Object.entries(j.nodes)) {
+      nodes[id] = { speaker: n.speaker || '', text: n.text || '', x: n.x ?? 40 + (i % 4) * 320, y: n.y ?? 40 + Math.floor(i / 4) * 260,
+        choices: (n.choices || []).map(c => ({ text: c.text || '', to: c.next || c.to || '' })) };
+      i++;
+    }
+    const nums = Object.keys(nodes).map(k => parseInt(k.replace(/\D/g, '')) || 0);
+    data = { start: j.start, nodes, counter: Math.max(0, ...nums) + Object.keys(nodes).length };
+    render(); restart();
+  } catch (err) { alert('Invalid file: ' + err.message); }
+  e.target.value = '';
+};
+$('#resetBtn').onclick = () => { if (confirm('Discard everything and load the sample?')) { data = sample(); render(); restart(); } };
+$('#restart').onclick = () => restart();
+
+/* ---------- preview player ---------- */
+function restart() { preview.innerHTML = ''; visit(data.start); }
+function visit(id) {
+  const n = data.nodes[id];
+  activeId = id;
+  document.querySelectorAll('.node').forEach(el => el.classList.toggle('active', el.dataset.id === id));
+  preview.querySelectorAll('.opts').forEach(o => o.remove());
+  if (!n) { preview.insertAdjacentHTML('beforeend', `<div class="end">(missing node)</div>`); return; }
+  const b = document.createElement('div');
+  b.innerHTML = `<div class="bubble"><div class="who">${esc(n.speaker || '???')}</div>${esc(n.text || '…')}</div>`;
+  const opts = document.createElement('div'); opts.className = 'opts';
+  if (!n.choices.length) opts.innerHTML = `<div class="end">— end of conversation —</div>`;
+  n.choices.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'opt' + (c.to && data.nodes[c.to] ? '' : ' dead');
+    btn.textContent = c.text || '(empty reply)';
+    btn.onclick = () => {
+      btn.closest('.opts').remove();
+      preview.insertAdjacentHTML('beforeend', `<div class="bubble you">${esc(c.text)}</div>`);
+      if (c.to) visit(c.to); else preview.insertAdjacentHTML('beforeend', `<div class="end">— end of conversation —</div>`);
+      preview.scrollTop = preview.scrollHeight;
+    };
+    opts.appendChild(btn);
+  });
+  preview.append(...b.children, opts);
+  preview.scrollTop = preview.scrollHeight;
+}
+
+render(); restart();
+</script>
+</body>
+</html>
