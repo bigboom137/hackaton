@@ -80,7 +80,7 @@ function drawLinks() {
       const path = `M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}`;
       const cls = draggingThis ? 'link-dragging' : target ? 'choice-link' : 'link-unconnected';
       const attrs = `data-from="${esc(id)}" data-choice="${i}" d="${path}"`;
-      if (target && !draggingThis) html += `<path class="link-hit" ${attrs} fill="none" stroke="transparent" stroke-width="14"/>`;
+      if (!draggingThis) html += `<path class="link-hit" data-connected="${target ? 'true' : 'false'}" ${attrs} fill="none" stroke="transparent" stroke-width="14"/>`;
       html += `<path class="${cls}" ${attrs} fill="none" stroke="${draggingThis ? 'var(--accent)' : 'var(--line)'}" stroke-width="2" marker-end="url(#ah)" ${target || draggingThis ? '' : 'stroke-dasharray="4 5"'}/>`;
     });
   }
@@ -133,7 +133,8 @@ svg.addEventListener('pointerdown', e => {
   if (!origin) return;
   const p = clientToCanvas(e.clientX, e.clientY);
   // Leave the connector's starting point for the port itself.
-  if (Math.hypot(p.x - origin.x, p.y - origin.y) * zoom < 18) return;
+  const startExclusion = path.dataset.connected === 'true' ? 18 : 4;
+  if (Math.hypot(p.x - origin.x, p.y - origin.y) * zoom < startExclusion) return;
   beginLinkDrag(path.dataset.from, Number(path.dataset.choice), e);
 });
 window.addEventListener('pointermove', e => {
@@ -270,38 +271,8 @@ $('#canvasWrap').addEventListener('contextmenu', e => {
   else { const p = clientToCanvas(e.clientX, e.clientY); showContextMenu(e.clientX, e.clientY, canvasMenu(p.x, p.y)); }
 });
 
-/* Drag nodes normally, or click a node to carry it until the next canvas click. */
+/* Drag nodes with a press and move. */
 let drag = null;
-let carry = null;
-wrap.addEventListener('click', e => {
-  if (carry) {
-    carry.el.classList.remove('carried');
-    carry = null;
-    save();
-    return;
-  }
-  const el = e.target.closest('.node');
-  if (!el || e.target.closest('input,textarea,select,button')) return;
-  const p = clientToCanvas(e.clientX, e.clientY), n = data.nodes[el.dataset.id];
-  carry = { el, n, offsetX:p.x - n.x, offsetY:p.y - n.y };
-  el.classList.add('carried');
-});
-window.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && carry) {
-    carry.el.classList.remove('carried');
-    carry = null;
-    save();
-  }
-});
-window.addEventListener('pointermove', e => {
-  if (!carry) return;
-  const p = clientToCanvas(e.clientX, e.clientY);
-  let x = p.x - carry.offsetX, y = p.y - carry.offsetY;
-  if (settings.snap) { x = Math.round(x / GRID) * GRID; y = Math.round(y / GRID) * GRID; }
-  carry.n.x = x; carry.n.y = y;
-  carry.el.style.left = `${x}px`; carry.el.style.top = `${y}px`;
-  updateBounds(); drawLinks();
-});
 canvas.addEventListener('pointerdown', e => {
   const el = e.target.closest('.node');
   if (!el || e.button !== 0 || e.target.closest('input,textarea,select,button')) return;
