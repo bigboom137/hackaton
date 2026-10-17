@@ -23,6 +23,7 @@ svg#links { position:absolute; left:0; top:0; width:1px; height:1px; overflow:vi
 .node { position:absolute; width:260px; background:var(--node); border:2px solid #3d4262; border-radius:8px; box-shadow:0 4px 10px #0006; }
 .node.start { border-color:var(--good); }
 .node.active { border-color:#ffd166; }
+.node.selected { outline:2px solid #d6b56f; outline-offset:3px; box-shadow:0 0 0 5px #d6b56f30,0 8px 24px #0009; z-index:2; }
 .node .head { display:flex; gap:6px; align-items:center; padding:6px; cursor:move; background:#00000030; border-radius:6px 6px 0 0; }
 .node .id { color:var(--muted); font-size:11px; white-space:nowrap; user-select:none; }
 .node input, .node textarea { width:100%; background:#1b1d2a; color:var(--text); border:1px solid #3d4262; border-radius:4px; padding:4px 6px; font:inherit; }
@@ -46,13 +47,15 @@ input[type=file] { display:none; }
 /* Questline title screen */
 [hidden] { display: none !important; }
 body { min-height:100vh; height:100vh; overflow:hidden; }
-.title-screen { position:relative; isolation:isolate; display:grid; place-items:center; min-height:100vh; overflow:hidden; color:#f4ead6; background:radial-gradient(ellipse at 50% 38%,#29344b 0%,#151b2a 48%,#0c111b 100%); }
+.title-screen { position:relative; isolation:isolate; display:grid; place-items:center; min-height:100vh; overflow:hidden; color:#f4ead6; background-color:#0c111b; background-image:linear-gradient(180deg,#11182766,#0c111bcc),url("../assets/home-background.jpg"),radial-gradient(ellipse at 50% 38%,#29344b 0%,#151b2a 48%,#0c111b 100%); background-size:cover; background-position:center; }
 .title-screen:before { content:""; position:absolute; inset:0; z-index:-1; opacity:.38; background-image:radial-gradient(1px 1px at 14% 22%,#fff 99%,transparent),radial-gradient(1px 1px at 78% 19%,#f3dfb0 99%,transparent),radial-gradient(1px 1px at 67% 42%,#fff 99%,transparent),radial-gradient(1px 1px at 24% 56%,#f3dfb0 99%,transparent),radial-gradient(1px 1px at 89% 62%,#fff 99%,transparent),radial-gradient(1px 1px at 42% 12%,#fff 99%,transparent); background-size:440px 320px; }
 .title-grain { position:absolute; inset:0; opacity:.13; pointer-events:none; background-image:repeating-linear-gradient(0deg,transparent 0 3px,#fff 4px,transparent 5px); mask-image:linear-gradient(transparent,#000); }
 .title-content { position:relative; z-index:2; width:min(90vw,540px); margin-top:-5vh; text-align:center; }
 .eyebrow { display:flex; justify-content:center; align-items:center; gap:14px; color:#cfad73; font-size:10px; letter-spacing:.28em; font-weight:700; }
 .eyebrow span { display:block; width:34px; height:1px; background:#a9824d; }
 .title-content h1 { margin:13px 0 0; font-family:Georgia,'Times New Roman',serif; font-size:clamp(62px,11vw,108px); font-weight:500; letter-spacing:.025em; line-height:1; color:#f6e5c3; text-shadow:0 3px 0 #7f593a,0 8px 35px #d0945050; }
+.title-logo { display:none; }
+.title-logo.is-loaded { display:block; width:min(82vw,440px); max-height:150px; margin:0 auto; object-fit:contain; filter:drop-shadow(0 8px 22px #0009); }
 .title-subtitle { margin:14px 0 38px; color:#c1c4cf; font-family:Georgia,serif; font-size:17px; font-style:italic; letter-spacing:.08em; }
 .menu-actions { display:grid; gap:9px; width:min(100%,300px); margin:auto; }
 .menu-actions button { min-height:46px; border-radius:2px; text-transform:uppercase; letter-spacing:.15em; font-size:11px; font-weight:700; transition:background .18s, transform .18s, border-color .18s; }

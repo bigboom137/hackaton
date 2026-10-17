@@ -42,10 +42,10 @@ $('#importFile').onchange = async e => {
 
 function replaceStory(fresh, question) {
   if (!confirm(question)) return;
-  data = fresh(); resetView(); render(); restart();
+  data = fresh(); activeId = null; selectedId = null;
+  resetView(); render(); restart();
 }
 $('#newBtn').onclick = () => replaceStory(blank, 'Start a blank story? Unsaved changes will be lost.');
-$('#resetBtn').onclick = () => replaceStory(sample, 'Load the example story? Unsaved changes will be lost.');
 
 /* Toolbar dropdown: opens on click, closes on item pick, outside click or Esc. */
 const menuToggle = $('#menuToggle'), menuPanel = $('#menuPanel');

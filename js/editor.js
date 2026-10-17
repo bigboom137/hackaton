@@ -7,7 +7,7 @@ function render() {
   for (const id of ids) {
     const n = data.nodes[id];
     const el = document.createElement('div');
-    el.className = 'node' + (id === data.start ? ' start' : '') + (id === activeId ? ' active' : '');
+    el.className = 'node' + (id === data.start ? ' start' : '') + (id === activeId ? ' active' : '') + (id === selectedId ? ' selected' : '');
     el.id = 'el-' + id;
     el.style.left = n.x + 'px'; el.style.top = n.y + 'px';
     const opts = (sel) => `<option value="">— end —</option>` +
@@ -67,6 +67,7 @@ function validate() {
 function newNode(x, y) {
   const id = 'n' + (++data.counter);
   data.nodes[id] = { speaker: 'NPC', text: '', x, y, choices: [] };
+  if (!data.start) data.start = id;
   return id;
 }
 
@@ -80,6 +81,11 @@ canvas.addEventListener('input', e => {
 canvas.addEventListener('change', e => { if (e.target.dataset.c === 'to') render(); });
 
 canvas.addEventListener('click', e => {
+  const selectedNode = e.target.closest('.node');
+  if (selectedNode) {
+    selectedId = selectedNode.dataset.id;
+    canvas.querySelectorAll('.node').forEach(node => node.classList.toggle('selected', node.dataset.id === selectedId));
+  }
   const act = e.target.dataset.act; if (!act) return;
   const el = e.target.closest('.node'), id = el.dataset.id, n = data.nodes[id];
   if (act === 'start') data.start = id;
@@ -92,6 +98,7 @@ canvas.addEventListener('click', e => {
   else if (act === 'del') {
     if (!confirm(`Delete node ${id}?`)) return;
     delete data.nodes[id];
+    if (selectedId === id) selectedId = null;
     for (const o of Object.values(data.nodes)) o.choices.forEach(c => { if (c.to === id) c.to = ''; });
     if (data.start === id) data.start = Object.keys(data.nodes)[0] || '';
   }

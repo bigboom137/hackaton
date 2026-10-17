@@ -1,7 +1,14 @@
 /* Preview Player: walks the dialogue tree as a chat. */
 const preview = $('#preview');
 
-function restart() { preview.innerHTML = ''; visit(data.start); }
+function restart() {
+  preview.innerHTML = '';
+  if (!Object.keys(data.nodes).length) {
+    preview.innerHTML = '<div class="end">No dialogue yet. Add a node to begin.</div>';
+    return;
+  }
+  visit(data.start);
+}
 
 function visit(id) {
   const n = data.nodes[id];
