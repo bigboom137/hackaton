@@ -168,6 +168,17 @@ body.no-grid #sizer { background-image:none; }
 .swatches { display:flex; gap:6px; }
 .swatch { width:24px; height:24px; padding:0; border-radius:50%; border:2px solid transparent; }
 .swatch[aria-pressed=true] { border-color:var(--text); box-shadow:0 0 0 2px var(--panel) inset; }
+/* AI entry points: one gradient style so they read as the same feature everywhere. */
+.ai-btn { background:linear-gradient(100deg,#7a5cff,#b65bd6); color:#fff; font-weight:500; box-shadow:0 2px 12px #8b5cf633; }
+.ai-btn:hover { filter:brightness(1.12); }
+main { position:relative; }
+.ai-hint { position:absolute; bottom:24px; left:calc((100% - 340px) / 2); transform:translateX(-50%); z-index:5; width:min(420px, calc(100% - 380px)); display:flex; flex-direction:column; align-items:center; gap:8px; padding:16px 18px 14px; text-align:center; background:var(--panel); border:1px solid var(--border); border-radius:10px; box-shadow:0 10px 30px var(--shadow-lg); }
+.ai-hint strong { font-size:14px; }
+.ai-hint span { color:var(--muted); font-size:12px; line-height:1.45; }
+.ai-hint .ai-btn { margin-top:4px; padding:8px 14px; }
+.ai-hint-close { position:absolute; top:6px; right:6px; padding:2px 7px; background:transparent; color:var(--muted); }
+.menu-ai { color:#fff; background:linear-gradient(100deg,#6b4fe0cc,#a24fc4cc); border:1px solid #c9a6ff66; box-shadow:0 5px 22px #8b5cf62e; }
+.menu-ai span { margin-right:9px; }
 .set-row input.wide { width:220px; }
 .set-note { margin:0; color:var(--muted); font-size:12px; line-height:1.4; }
 .set-note code { font:inherit; color:var(--text); }
@@ -193,11 +204,14 @@ body.no-grid #sizer { background-image:none; }
 @media (max-width:760px), (max-height:600px) and (orientation:landscape) {
   body { height:100vh; height:100dvh; }
   .studio { height:100vh; height:100dvh; }
-  .studio header { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:6px; padding:7px; }
+  .studio header { display:grid; grid-template-columns:minmax(0,1fr) auto auto auto; gap:6px; padding:7px; }
   .studio header h1 { grid-column:1 / -1; width:auto; margin:0 0 2px; }
   .studio header #addNode { grid-column:1; }
-  .studio header .dropdown { grid-column:2; }
-  .studio header .mobile-preview-toggle { grid-column:3; }
+  .studio header #aiToolbarBtn { grid-column:2; }
+  .studio header .dropdown { grid-column:3; }
+  .studio header .mobile-preview-toggle { grid-column:4; }
+  .ai-btn-label { display:none; } /* just ✨ on phones */
+  .ai-hint { left:50%; width:calc(100% - 32px); }
   .mobile-preview-toggle { display:inline-flex; align-items:center; justify-content:center; }
   .studio header .zoom { grid-column:1 / -1; margin:0; }
   .studio header #status { grid-column:1 / -1; }

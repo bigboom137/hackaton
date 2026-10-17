@@ -19,6 +19,7 @@
     <p class="title-subtitle">Every choice leaves a mark.</p>
     <nav class="menu-actions" aria-label="Main menu">
       <button id="playBtn" class="menu-primary"><span>▶</span> Begin your journey</button>
+      <button id="menuAi" class="menu-ai"><span>✨</span> Write a story with AI</button>
       <button id="continueBtn" class="menu-secondary">Continue story <span>↗</span></button>
       <button id="menuLoad" class="menu-secondary">Load save</button>
       <button id="menuSettings" class="menu-secondary">Settings</button>
@@ -30,6 +31,7 @@
 <header>
   <h1><button class="brand-home" id="menuBtn" aria-label="Return to main menu">Questline</button><span class="studio-label">STORY STUDIO</span></h1>
   <button id="addNode">+ Add node</button>
+  <button class="ai-btn" id="aiToolbarBtn" title="Generate a branching conversation with AI">✨<span class="ai-btn-label"> Generate with AI</span></button>
   <div class="dropdown">
     <button class="ghost" id="menuToggle" aria-haspopup="true" aria-expanded="false">☰ Menu ▾</button>
     <div class="dropdown-panel" id="menuPanel" role="menu" hidden>
@@ -58,6 +60,12 @@
 </header>
 <main>
   <div id="canvasWrap"><div id="sizer"><div id="canvas"><svg id="links"></svg></div></div></div>
+  <div class="ai-hint" id="aiHint" hidden>
+    <button class="ai-hint-close" id="aiHintClose" title="Dismiss" aria-label="Dismiss">✕</button>
+    <strong>Not sure where to start?</strong>
+    <span>Describe an NPC and let AI write a branching conversation, or just start typing in the node.</span>
+    <button class="ai-btn" id="aiHintBtn">✨ Generate a story with AI</button>
+  </div>
   <aside id="side">
     <h2>Preview Player <span><button class="ghost mobile-preview-back" id="previewBack">← Editor</button><button class="ghost" id="restart">↻ Restart</button></span></h2>
     <div id="preview"></div>
@@ -101,8 +109,8 @@
     </fieldset>
     <fieldset>
       <legend>AI</legend>
-      <label class="set-row"><span>AI server URL</span><input type="text" class="wide" data-set="aiUrl" placeholder="https://questline-ai.….workers.dev" spellcheck="false" autocomplete="off"></label>
-      <p class="set-note">Used by ✨ Generate with AI and Expand with AI. Deploy the worker in <code>worker/</code> to get a URL.</p>
+      <label class="set-row"><span>AI server URL</span><input type="text" class="wide" data-set="aiUrl" placeholder="Built-in server" spellcheck="false" autocomplete="off"></label>
+      <p class="set-note">Leave blank to use the built-in Questline AI server. To use your own, deploy the worker in <code>worker/</code> and paste its URL.</p>
     </fieldset>
     <fieldset>
       <legend>Data</legend>
