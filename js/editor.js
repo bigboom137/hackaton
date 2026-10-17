@@ -154,9 +154,9 @@ function finishLinkDrag(e) {
     const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('.node');
     const choice = data.nodes[link.fromId]?.choices[link.choiceIndex];
     const targetId = target?.dataset.id || link.targetId;
-    if (targetId && choice) {
-      choice.to = targetId;
-      selectedId = targetId;
+    if (choice) {
+      choice.to = targetId || '';
+      if (targetId) selectedId = targetId;
       render();
     } else drawLinks();
   }
