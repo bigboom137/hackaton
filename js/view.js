@@ -58,6 +58,7 @@ wrap.addEventListener('wheel', e => {
 let pan = null;
 wrap.addEventListener('mousedown', e => {
   if (e.button !== 0 || e.target.closest('.node')) return;
+  e.preventDefault(); // don't start a text selection while panning
   pan = { x: e.clientX, y: e.clientY, sl: wrap.scrollLeft, st: wrap.scrollTop };
   wrap.classList.add('panning');
 });

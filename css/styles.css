@@ -19,7 +19,7 @@ svg#links { position:absolute; left:0; top:0; width:1px; height:1px; overflow:vi
 .node.start { border-color:var(--good); }
 .node.active { border-color:#ffd166; }
 .node .head { display:flex; gap:6px; align-items:center; padding:6px; cursor:move; background:#00000030; border-radius:6px 6px 0 0; }
-.node .id { color:var(--muted); font-size:11px; white-space:nowrap; }
+.node .id { color:var(--muted); font-size:11px; white-space:nowrap; user-select:none; }
 .node input, .node textarea { width:100%; background:#1b1d2a; color:var(--text); border:1px solid #3d4262; border-radius:4px; padding:4px 6px; font:inherit; }
 .node textarea { resize:vertical; min-height:56px; margin:0; }
 .node .body { padding:6px; display:flex; flex-direction:column; gap:6px; }
