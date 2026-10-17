@@ -22,7 +22,9 @@ svg#links { position:absolute; left:0; top:0; width:1px; height:1px; overflow:vi
 .zoom button { min-width:32px; }
 .node { position:absolute; width:260px; background:var(--node); border:2px solid #3d4262; border-radius:8px; box-shadow:0 4px 10px #0006; }
 .node.start { border-color:var(--good); }
-.node.active { border-color:#ffd166; }
+/* Gold ring = selected. The Preview Player's current node gets a tag instead, so the two never stack. */
+.node.active::after { content:'▶ previewing'; position:absolute; bottom:100%; right:8px; margin-bottom:10px; padding:1px 6px; border-radius:3px; background:var(--accent); color:#fff; font-size:10px; pointer-events:none; }
+.node input:focus, .node textarea:focus, .node select:focus { outline:none; border-color:var(--accent); }
 .node.selected { outline:2px solid #d6b56f; outline-offset:3px; box-shadow:0 0 0 5px #d6b56f30,0 8px 24px #0009; z-index:2; }
 .node .head { display:flex; gap:6px; align-items:center; padding:6px; cursor:move; background:#00000030; border-radius:6px 6px 0 0; }
 .node .id { color:var(--muted); font-size:11px; white-space:nowrap; user-select:none; }
