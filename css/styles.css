@@ -43,6 +43,12 @@
 }
 
 * { box-sizing: border-box; }
+button, input, textarea, select { transition: background-color .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease, filter .16s ease; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration:220ms; animation-timing-function:ease-in-out; }
+::view-transition-old(root) { animation-name:questline-fade-out; }
+::view-transition-new(root) { animation-name:questline-fade-in; }
+@keyframes questline-fade-out { to { opacity:0; } }
+@keyframes questline-fade-in { from { opacity:0; } }
 body { margin:0; font:14px var(--font); background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; }
 header { display:flex; gap:8px; align-items:center; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--divider); flex-wrap:wrap; }
 header h1 { font-size:16px; margin:0 12px 0 0; }
@@ -63,7 +69,7 @@ svg#links { position:absolute; left:0; top:0; width:1px; height:1px; overflow:vi
 .dropdown-panel button:hover { background:var(--ghost); filter:none; }
 .dropdown-panel hr { width:100%; margin:4px 0; border:0; border-top:1px solid var(--border); }
 .zoom button { min-width:32px; }
-.node { position:absolute; width:260px; background:var(--node); border:2px solid var(--border); border-radius:8px; box-shadow:0 4px 10px var(--shadow); }
+.node { position:absolute; width:260px; background:var(--node); border:2px solid var(--border); border-radius:8px; box-shadow:0 4px 10px var(--shadow); transition:border-color .16s ease, box-shadow .16s ease; }
 .node.active { border-color:var(--good); }
 /* Gold ring = selected. The Preview Player's current node gets a tag instead, so the two never stack. */
 .node.active::after { content:'▶ previewing'; position:absolute; bottom:100%; right:8px; margin-bottom:10px; padding:1px 6px; border-radius:3px; background:var(--accent); color:var(--on-accent); font-size:10px; pointer-events:none; }
@@ -200,6 +206,9 @@ body.no-ai .ai-only { display:none !important; } /* Settings → Hide AI feature
 .ai-spinner { width:14px; height:14px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:ai-spin .8s linear infinite; }
 @keyframes ai-spin { to { transform:rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .ai-spinner { animation-duration:2.4s; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior:auto !important; transition-duration:.01ms !important; }
+}
 .set-actions { display:flex; flex-wrap:wrap; gap:6px; justify-content:space-between; }
 .dialog-actions { display:flex; justify-content:flex-end; gap:6px; margin-top:4px; }
 .dialog-actions button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }

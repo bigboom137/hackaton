@@ -149,19 +149,28 @@ function setMobilePreview(open) {
   studio.classList.toggle('preview-open', open);
   mobilePreviewBtn.setAttribute('aria-pressed', String(open));
 }
+function transitionScreens(update) {
+  if (document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.startViewTransition(update);
+  } else update();
+}
 mobilePreviewBtn.onclick = () => setMobilePreview(true);
 previewBack.onclick = () => setMobilePreview(false);
 function hasSave() { try { return !!localStorage.getItem(KEY); } catch (e) { return false; } }
 function showMenu() {
-  studio.hidden = true; titleScreen.hidden = false; document.body.classList.remove('in-studio');
-  setMobilePreview(false);
-  continueBtn.disabled = !hasSave();
+  transitionScreens(() => {
+    studio.hidden = true; titleScreen.hidden = false; document.body.classList.remove('in-studio');
+    setMobilePreview(false);
+    continueBtn.disabled = !hasSave();
+  });
 }
 // Render only once the studio is visible: hidden elements measure as 0, which breaks the arrows.
 function openStudio() {
-  setMobilePreview(false);
-  titleScreen.hidden = true; studio.hidden = false; document.body.classList.add('in-studio');
-  render(); restart();
+  transitionScreens(() => {
+    setMobilePreview(false);
+    titleScreen.hidden = true; studio.hidden = false; document.body.classList.add('in-studio');
+    render(); restart();
+  });
 }
 document.querySelector('#playBtn').onclick = async () => {
   if (hasSave() && !await ask('Begin a new story?', 'This replaces the story you were working on. Named saves are kept.', { ok: 'Begin', danger: true })) return;
