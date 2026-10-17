@@ -42,6 +42,7 @@ function render() {
     el.dataset.id = id;
     canvas.appendChild(el);
   }
+  canvas.querySelectorAll('.node textarea').forEach(fitTextarea);
   updateBounds();
   drawLinks();
   validate();
@@ -103,11 +104,22 @@ function newNode(x, y) {
   return id;
 }
 
+/* Text boxes grow to fit their text instead of having a resize handle. */
+function fitTextarea(t) {
+  t.style.height = 'auto';
+  t.style.height = t.scrollHeight + 2 + 'px'; // +2 for the border
+}
+
 canvas.addEventListener('input', e => {
   const el = e.target.closest('.node'); if (!el) return;
   const n = data.nodes[el.dataset.id];
   if (e.target.dataset.f) n[e.target.dataset.f] = e.target.value;
   if (e.target.dataset.c) n.choices[+e.target.closest('.choice').dataset.i][e.target.dataset.c] = e.target.value;
+  if (e.target.tagName === 'TEXTAREA') {
+    const before = el.offsetHeight;
+    fitTextarea(e.target);
+    if (el.offsetHeight !== before) { updateBounds(); drawLinks(); } // rows below moved, so do the arrows
+  }
   save();
 });
 canvas.addEventListener('change', e => { if (e.target.dataset.c === 'to') render(); });
