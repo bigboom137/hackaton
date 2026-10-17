@@ -17,6 +17,12 @@ function nodeBounds() {
 /* Canvas coordinate currently at the viewport's top-left. */
 function viewOrigin() { return { x: bx + wrap.scrollLeft / zoom, y: by + wrap.scrollTop / zoom }; }
 
+/* Screen (client) point → canvas coordinates. */
+function clientToCanvas(cx, cy) {
+  const r = wrap.getBoundingClientRect(), v = viewOrigin();
+  return { x: v.x + (cx - r.left) / zoom, y: v.y + (cy - r.top) / zoom };
+}
+
 /* Size the canvas to the nodes plus padding, always including the area being
    viewed, then scroll so (vx, vy) sits at the viewport's top-left. Because the
    view is part of the extent, growing or shrinking never makes the view jump. */

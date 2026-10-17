@@ -14,7 +14,7 @@ function render() {
       ids.map(o => `<option value="${o}" ${o === sel ? 'selected' : ''}>${o}</option>`).join('');
     el.innerHTML = `
       <div class="head" data-drag="${id}">
-        <span class="id">${id}</span>
+        <span class="id" title="Double-click to rename">${esc(id)}</span>
         <input data-f="speaker" value="${esc(n.speaker)}" placeholder="Speaker">
         <button class="mini" data-act="start" title="Set as start">▶</button>
         <button class="mini" data-act="del" title="Delete node">✕</button>
@@ -65,7 +65,8 @@ function validate() {
 }
 
 function newNode(x, y) {
-  const id = 'n' + (++data.counter);
+  let id;
+  do id = 'n' + (++data.counter); while (data.nodes[id]); // skip ids taken by renamed nodes
   data.nodes[id] = { speaker: 'NPC', text: '', x, y, choices: [] };
   if (!data.start) data.start = id;
   return id;
@@ -102,10 +103,7 @@ canvas.addEventListener('click', e => {
   const el = e.target.closest('.node'), id = el.dataset.id, n = data.nodes[id];
   if (act === 'start') data.start = id;
   else if (act === 'addchoice') n.choices.push({ text: '', to: '' });
-  else if (act === 'addlinked') {
-    const to = newNode(n.x + 320, n.y + n.choices.length * 120);
-    n.choices.push({ text: '', to });
-  }
+  else if (act === 'addlinked') { addLinked(id); return; }
   else if (act === 'rmchoice') n.choices.splice(+e.target.closest('.choice').dataset.i, 1);
   else if (act === 'del') { deleteNode(id); return; }
   render();
@@ -119,6 +117,78 @@ async function deleteNode(id) {
   if (data.start === id) data.start = Object.keys(data.nodes)[0] || '';
   render();
 }
+
+function addLinked(id) {
+  const n = data.nodes[id];
+  const to = newNode(n.x + 320, n.y + n.choices.length * 120);
+  n.choices.push({ text: '', to });
+  render();
+}
+
+function duplicateNode(id) {
+  const n = data.nodes[id], copy = newNode(n.x + 30, n.y + 30);
+  Object.assign(data.nodes[copy], { speaker: n.speaker, text: n.text, choices: n.choices.map(c => ({ ...c })) });
+  selectedId = copy;
+  render();
+}
+
+/* Renaming changes the node's id, so every reference to it is updated too. */
+function renameNode(oldId, newId) {
+  if (oldId === newId) return;
+  const nodes = {};
+  for (const [k, v] of Object.entries(data.nodes)) nodes[k === oldId ? newId : k] = v; // keep order
+  data.nodes = nodes;
+  for (const n of Object.values(nodes)) n.choices.forEach(c => { if (c.to === oldId) c.to = newId; });
+  if (data.start === oldId) data.start = newId;
+  if (selectedId === oldId) selectedId = newId;
+  if (activeId === oldId) activeId = newId;
+  render();
+}
+
+async function promptRename(id) {
+  const name = await askText('Rename node', 'The id is used by links and in the exported JSON.', {
+    value: id, ok: 'Rename',
+    validate: v => !v ? 'Enter a name.'
+      : v.length > 32 ? 'Keep it to 32 characters or fewer.'
+      : !/^[\w-]+$/.test(v) ? 'Use letters, numbers, - or _ only (no spaces).'
+      : v !== id && data.nodes[v] ? `"${v}" is already used by another node.` : '',
+  });
+  if (name !== null) renameNode(id, name);
+}
+canvas.addEventListener('dblclick', e => {
+  const label = e.target.closest('.id');
+  if (label) promptRename(label.closest('.node').dataset.id);
+});
+
+/* Right-click menus. Text fields keep the browser's menu so copy/paste still work. */
+function nodeMenu(id) {
+  return [
+    { label: 'Rename…', hint: 'dbl-click id', action: () => promptRename(id) },
+    { label: 'Set as start', disabled: data.start === id, action: () => { data.start = id; render(); } },
+    { label: 'Preview from here', action: () => previewFrom(id) },
+    '-',
+    { label: 'Add choice', action: () => { data.nodes[id].choices.push({ text: '', to: '' }); render(); } },
+    { label: 'Add choice → new node', action: () => addLinked(id) },
+    { label: 'Duplicate', action: () => duplicateNode(id) },
+    '-',
+    { label: 'Delete node', danger: true, action: () => deleteNode(id) },
+  ];
+}
+function canvasMenu(x, y) {
+  return [
+    { label: 'Add node here', action: () => { selectedId = newNode(x, y); render(); } },
+    '-',
+    { label: 'Fit all nodes', action: fitView },
+    { label: 'Reset zoom to 100%', action: () => setZoom(1) },
+  ];
+}
+$('#canvasWrap').addEventListener('contextmenu', e => {
+  if (e.target.closest('input, textarea')) return;
+  e.preventDefault();
+  const el = e.target.closest('.node');
+  if (el) { selectNode(el.dataset.id); showContextMenu(e.clientX, e.clientY, nodeMenu(el.dataset.id)); }
+  else { const p = clientToCanvas(e.clientX, e.clientY); showContextMenu(e.clientX, e.clientY, canvasMenu(p.x, p.y)); }
+});
 
 /* drag nodes */
 let drag = null;
