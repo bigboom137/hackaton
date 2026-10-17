@@ -80,12 +80,24 @@ canvas.addEventListener('input', e => {
 });
 canvas.addEventListener('change', e => { if (e.target.dataset.c === 'to') render(); });
 
+/* Selection: follows the mouse press and keyboard focus; cleared by empty-canvas click or Esc. */
+function selectNode(id) {
+  selectedId = id;
+  canvas.querySelectorAll('.node').forEach(node => node.classList.toggle('selected', node.dataset.id === id));
+}
+canvas.addEventListener('focusin', e => { const el = e.target.closest('.node'); if (el) selectNode(el.dataset.id); });
+$('#canvasWrap').addEventListener('mousedown', e => {
+  const el = e.target.closest('.node');
+  if (el) selectNode(el.dataset.id);
+  else if (e.button === 0) selectNode(null);
+});
+window.addEventListener('keydown', e => {
+  if (e.key !== 'Escape' || !$('#savesModal').hidden || $('#studio').hidden) return;
+  if (canvas.contains(document.activeElement)) document.activeElement.blur();
+  selectNode(null);
+});
+
 canvas.addEventListener('click', e => {
-  const selectedNode = e.target.closest('.node');
-  if (selectedNode) {
-    selectedId = selectedNode.dataset.id;
-    canvas.querySelectorAll('.node').forEach(node => node.classList.toggle('selected', node.dataset.id === selectedId));
-  }
   const act = e.target.dataset.act; if (!act) return;
   const el = e.target.closest('.node'), id = el.dataset.id, n = data.nodes[id];
   if (act === 'start') data.start = id;
@@ -111,6 +123,8 @@ canvas.addEventListener('mousedown', e => {
   const el = e.target.closest('.node');
   if (!el || e.button !== 0 || e.target.closest('input,textarea,select,button')) return;
   e.preventDefault(); // don't start a text selection while dragging
+  // preventDefault also stops the browser moving focus, so drop focus left in another node.
+  if (!el.contains(document.activeElement)) document.activeElement?.blur();
   const n = data.nodes[el.dataset.id], v = viewOrigin();
   drag = { el, n, mx: e.clientX, my: e.clientY, cx: e.clientX, cy: e.clientY, x0: n.x, y0: n.y, vx0: v.x, vy0: v.y };
   drag.raf = requestAnimationFrame(edgeScroll);

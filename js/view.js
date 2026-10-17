@@ -56,8 +56,8 @@ function fitView() {
   $('#zoomLabel').textContent = Math.round(zoom * 100) + '%';
 }
 
-/* Forget the old origin, e.g. after loading a different tree. */
-function resetView() { bx = by = null; }
+/* Forget the old origin and highlights, e.g. after loading a different tree. */
+function resetView() { bx = by = null; selectedId = null; activeId = null; }
 
 /* Ctrl + wheel (and trackpad pinch) zooms; plain wheel scrolls as usual. */
 wrap.addEventListener('wheel', e => {
