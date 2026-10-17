@@ -1,8 +1,11 @@
 /* Preview Player: walks the dialogue tree as a chat. */
 const preview = $('#preview');
+let typing = null; // { stop(), finish() } while a line is being typed out
+
+function clearPreview() { typing?.stop(); preview.innerHTML = ''; }
 
 function restart() {
-  preview.innerHTML = '';
+  clearPreview();
   if (!Object.keys(data.nodes).length) {
     preview.innerHTML = '<div class="end">No dialogue yet. Add a node to begin.</div>';
     return;
@@ -11,7 +14,23 @@ function restart() {
 }
 
 /* Restart the preview at a given node instead of the start. */
-function previewFrom(id) { preview.innerHTML = ''; visit(id); }
+function previewFrom(id) { clearPreview(); visit(id); }
+
+/* Show text in el, typed out letter by letter if the setting is on; then call done. */
+function typeLine(el, text, done) {
+  if (!settings.typewriter || text.length < 2) { el.textContent = text; done(); return; }
+  let i = 0;
+  const timer = setInterval(() => {
+    el.textContent = text.slice(0, ++i);
+    preview.scrollTop = preview.scrollHeight;
+    if (i >= text.length) typing.finish();
+  }, 1000 / settings.textSpeed);
+  typing = {
+    stop() { clearInterval(timer); typing = null; },
+    finish() { this.stop(); el.textContent = text; done(); },
+  };
+}
+preview.addEventListener('click', () => typing?.finish()); // click to skip the typing
 
 function visit(id) {
   const n = data.nodes[id];
@@ -19,8 +38,12 @@ function visit(id) {
   document.querySelectorAll('.node').forEach(el => el.classList.toggle('active', el.dataset.id === id));
   preview.querySelectorAll('.opts').forEach(o => o.remove());
   if (!n) { preview.insertAdjacentHTML('beforeend', `<div class="end">(missing node)</div>`); return; }
-  const b = document.createElement('div');
-  b.innerHTML = `<div class="bubble"><div class="who">${esc(n.speaker || '???')}</div>${esc(n.text || '…')}</div>`;
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = `<div class="who">${esc(n.speaker || '???')}</div><span class="line"></span>`;
+  preview.appendChild(bubble);
+
   const opts = document.createElement('div'); opts.className = 'opts';
   if (!n.choices.length) opts.innerHTML = `<div class="end">— end of conversation —</div>`;
   n.choices.forEach(c => {
@@ -35,7 +58,11 @@ function visit(id) {
     };
     opts.appendChild(btn);
   });
-  preview.append(...b.children, opts);
+
+  typeLine(bubble.querySelector('.line'), n.text || '…', () => {
+    preview.appendChild(opts);
+    preview.scrollTop = preview.scrollHeight;
+  });
   preview.scrollTop = preview.scrollHeight;
 }
 

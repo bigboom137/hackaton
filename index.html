@@ -22,7 +22,6 @@
       <button id="continueBtn" class="menu-secondary">Continue story <span>↗</span></button>
       <button id="menuLoad" class="menu-secondary">Load save</button>
       <button id="menuSettings" class="menu-secondary">Settings</button>
-      <button id="menuCredits" class="menu-secondary">Credits</button>
     </nav>
     <p id="menuNote" class="menu-note" aria-live="polite"></p>
     <div class="title-footer"><span>THE CHRONICLES OF ELDORIA</span><span>VERSION 1.0</span></div>
@@ -45,6 +44,7 @@
       <button role="menuitem" id="exportBtn">Export JSON</button>
       <button role="menuitem" id="exportJs">Copy as JS</button>
       <hr>
+      <button role="menuitem" id="settingsBtn">Settings…</button>
       <button role="menuitem" id="menuItemHome">Main menu</button>
     </div>
   </div>
@@ -77,6 +77,34 @@
     <p class="modal-note">Saves live in this browser only. Use Export JSON to back up or move a story.</p>
   </div>
 </div>
+<div id="settingsModal" class="modal" hidden>
+  <div class="modal-box settings-box" role="dialog" aria-labelledby="settingsTitle">
+    <h2 id="settingsTitle">Settings <button class="ghost" id="settingsClose" title="Close">✕</button></h2>
+    <fieldset>
+      <legend>Editor</legend>
+      <label class="set-row"><span>Snap nodes to grid</span><input type="checkbox" data-set="snap"></label>
+      <label class="set-row"><span>Show grid</span><input type="checkbox" data-set="grid"></label>
+      <label class="set-row"><span>Ask before deleting nodes</span><input type="checkbox" data-set="confirmDelete"></label>
+      <label class="set-row"><span>Default speaker</span><input type="text" data-set="defaultSpeaker" maxlength="40" placeholder="NPC"></label>
+    </fieldset>
+    <fieldset>
+      <legend>Preview</legend>
+      <label class="set-row"><span>Typewriter text</span><input type="checkbox" data-set="typewriter"></label>
+      <label class="set-row"><span>Text speed</span>
+        <select data-set="textSpeed" data-num><option value="20">Slow</option><option value="45">Normal</option><option value="90">Fast</option></select></label>
+    </fieldset>
+    <fieldset>
+      <legend>Appearance</legend>
+      <div class="set-row"><span>Accent colour</span><div class="swatches" id="swatches"></div></div>
+      <label class="set-row"><span>Text size</span>
+        <select data-set="textSize" data-num><option value="13">Small</option><option value="14">Medium</option><option value="16">Large</option></select></label>
+    </fieldset>
+    <fieldset>
+      <legend>Data</legend>
+      <div class="set-actions"><button class="ghost" id="resetSettings">Reset settings</button><button class="danger" id="clearData">Delete all saved data</button></div>
+    </fieldset>
+  </div>
+</div>
 <script src="js/state.js"></script>
 <script src="js/dialog.js"></script>
 <script src="js/contextmenu.js"></script>
@@ -85,6 +113,7 @@
 <script src="js/player.js"></script>
 <script src="js/io.js"></script>
 <script src="js/saves.js"></script>
+<script src="js/settings.js"></script>
 <script>
 const titleScreen = document.querySelector('#titleScreen');
 const studio = document.querySelector('#studio');
@@ -118,8 +147,6 @@ continueBtn.onclick = openStudio;
 document.querySelector('#menuBtn').onclick = showMenu;
 document.querySelector('#menuItemHome').onclick = showMenu;
 showMenu();
-document.querySelector('#menuSettings').onclick = () => { menuNote.textContent = 'Settings are coming soon.'; };
-document.querySelector('#menuCredits').onclick = () => { menuNote.textContent = 'A story crafted in Eldoria.'; };
 </script>
 </body>
 </html>

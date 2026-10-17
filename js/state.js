@@ -16,7 +16,7 @@ function sample() {
 
 /* A fresh story: one empty start node, ready to write. */
 function blank() {
-  return { start: 'n1', counter: 1, nodes: { n1: { speaker: 'NPC', text: '', x: 40, y: 40, choices: [] } } };
+  return { start: 'n1', counter: 1, nodes: { n1: { speaker: defaultSpeaker(), text: '', x: 40, y: 40, choices: [] } } };
 }
 
 function load() {

@@ -40,7 +40,7 @@ function render() {
 }
 
 function drawLinks() {
-  let html = `<defs><marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8z" fill="#7c8cff"/></marker></defs>`;
+  let html = `<defs><marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8z" style="fill:var(--line)"/></marker></defs>`;
   for (const [id, n] of Object.entries(data.nodes)) {
     const a = $('#el-' + id);
     n.choices.forEach((c, i) => {
@@ -50,7 +50,7 @@ function drawLinks() {
       const x1 = a.offsetLeft + a.offsetWidth, y1 = a.offsetTop + (row ? row.offsetTop + row.offsetHeight / 2 : 20);
       const x2 = b.offsetLeft, y2 = b.offsetTop + 20;
       const dx = Math.max(40, Math.abs(x2 - x1) / 2);
-      html += `<path d="M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}" fill="none" stroke="#7c8cff" stroke-width="2" marker-end="url(#ah)"/>`;
+      html += `<path d="M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}" fill="none" style="stroke:var(--line)" stroke-width="2" marker-end="url(#ah)"/>`;
     });
   }
   svg.innerHTML = html;
@@ -67,7 +67,7 @@ function validate() {
 function newNode(x, y) {
   let id;
   do id = 'n' + (++data.counter); while (data.nodes[id]); // skip ids taken by renamed nodes
-  data.nodes[id] = { speaker: 'NPC', text: '', x, y, choices: [] };
+  data.nodes[id] = { speaker: defaultSpeaker(), text: '', x, y, choices: [] };
   if (!data.start) data.start = id;
   return id;
 }
@@ -93,7 +93,7 @@ $('#canvasWrap').addEventListener('pointerdown', e => {
   else if (e.button === 0) selectNode(null);
 });
 window.addEventListener('keydown', e => {
-  if (e.key !== 'Escape' || !$('#savesModal').hidden || $('#studio').hidden) return;
+  if (e.key !== 'Escape' || document.querySelector('.modal:not([hidden])') || $('#studio').hidden) return;
   if (canvas.contains(document.activeElement)) document.activeElement.blur();
   selectNode(null);
 });
@@ -110,7 +110,7 @@ canvas.addEventListener('click', e => {
 });
 
 async function deleteNode(id) {
-  if (!await ask(`Delete node ${id}?`, 'Choices that lead here will become conversation endings.', { ok: 'Delete', danger: true })) return;
+  if (settings.confirmDelete && !await ask(`Delete node ${id}?`, 'Choices that lead here will become conversation endings.', { ok: 'Delete', danger: true })) return;
   delete data.nodes[id];
   if (selectedId === id) selectedId = null;
   for (const o of Object.values(data.nodes)) o.choices.forEach(c => { if (c.to === id) c.to = ''; });
@@ -206,8 +206,10 @@ canvas.addEventListener('pointerdown', e => {
 /* Node follows the pointer, accounting for any scrolling since the drag began. */
 function moveDrag() {
   const v = viewOrigin();
-  drag.n.x = drag.x0 + (v.x - drag.vx0) + (drag.cx - drag.mx) / zoom;
-  drag.n.y = drag.y0 + (v.y - drag.vy0) + (drag.cy - drag.my) / zoom;
+  let x = drag.x0 + (v.x - drag.vx0) + (drag.cx - drag.mx) / zoom;
+  let y = drag.y0 + (v.y - drag.vy0) + (drag.cy - drag.my) / zoom;
+  if (settings.snap) { x = Math.round(x / GRID) * GRID; y = Math.round(y / GRID) * GRID; }
+  drag.n.x = x; drag.n.y = y;
   drag.el.style.left = drag.n.x + 'px'; drag.el.style.top = drag.n.y + 'px';
   updateBounds();
   drawLinks();

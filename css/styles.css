@@ -109,6 +109,18 @@ body { min-height:100vh; height:100vh; overflow:hidden; }
 .ctx-menu kbd { color:var(--muted); font:inherit; font-size:11px; }
 .ctx-menu hr { width:100%; margin:4px 0; border:0; border-top:1px solid #3d4262; }
 .node .id { cursor:text; }
+body.no-grid #sizer { background-image:none; }
+.settings-box { width:min(100%,460px); overflow:auto; gap:12px; }
+.settings-box fieldset { margin:0; padding:8px 10px 10px; border:1px solid #3d4262; border-radius:6px; display:flex; flex-direction:column; gap:8px; }
+.settings-box legend { padding:0 4px; color:var(--muted); font-size:11px; letter-spacing:.12em; text-transform:uppercase; }
+.set-row { display:flex; justify-content:space-between; align-items:center; gap:12px; min-height:28px; }
+.set-row input[type=checkbox] { width:18px; height:18px; accent-color:var(--accent); cursor:pointer; }
+.set-row input[type=text], .set-row select { width:150px; background:var(--bg); color:var(--text); border:1px solid #3d4262; border-radius:4px; padding:5px 7px; font:inherit; }
+.set-row input[type=text]:focus, .set-row select:focus { outline:none; border-color:var(--accent); }
+.swatches { display:flex; gap:6px; }
+.swatch { width:24px; height:24px; padding:0; border-radius:50%; border:2px solid transparent; }
+.swatch[aria-pressed=true] { border-color:#fff; box-shadow:0 0 0 2px var(--panel) inset; }
+.set-actions { display:flex; flex-wrap:wrap; gap:6px; justify-content:space-between; }
 .dialog-actions { display:flex; justify-content:flex-end; gap:6px; margin-top:4px; }
 .dialog-actions button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
 .menu-secondary:disabled { opacity:.4; cursor:not-allowed; transform:none !important; }
