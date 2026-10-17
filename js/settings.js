@@ -2,7 +2,7 @@
 const SETTINGS_KEY = 'npc-dialogue-studio-settings-v1';
 const DEFAULT_SETTINGS = {
   snap: false, grid: true, confirmDelete: true, defaultSpeaker: 'NPC',
-  typewriter: false, textSpeed: 45, accent: '#7c8cff', textSize: 14,
+  typewriter: false, textSpeed: 45, accent: '#7c8cff', textSize: 14, theme: 'system',
 };
 const ACCENTS = { Periwinkle: '#7c8cff', Violet: '#a77cff', Teal: '#3cc7b4', Gold: '#d6a84f', Rose: '#ff7aa2' };
 
@@ -16,6 +16,9 @@ let settings = loadSettings();
 function defaultSpeaker() { return settings.defaultSpeaker.trim() || 'NPC'; }
 
 function applySettings() {
+  // 'system' follows the OS (prefers-color-scheme); light/dark force it. See the tokens in styles.css.
+  if (settings.theme === 'system') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = settings.theme;
   const root = document.documentElement.style;
   root.setProperty('--accent', settings.accent);
   root.setProperty('--line', settings.accent);
