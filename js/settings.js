@@ -3,6 +3,7 @@ const SETTINGS_KEY = 'npc-dialogue-studio-settings-v1';
 const DEFAULT_SETTINGS = {
   snap: false, grid: true, confirmDelete: true, defaultSpeaker: 'NPC',
   typewriter: false, textSpeed: 45, accent: '#7c8cff', textSize: 14, theme: 'system',
+  aiUrl: '', // Questline AI worker URL (worker/README.md)
 };
 const ACCENTS = { Periwinkle: '#7c8cff', Violet: '#a77cff', Teal: '#3cc7b4', Gold: '#d6a84f', Rose: '#ff7aa2' };
 
