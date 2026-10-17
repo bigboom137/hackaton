@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Questline Village</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500;700&display=swap">
+<style>
+:root {
+  --font:'Source Code Pro', ui-monospace, Menlo, Consolas, monospace;
+  --bg:#1b1d2a; --panel:#242738; --border:#3d4262; --ghost:#3a3f5c; --field:#1b1d2a;
+  --text:#e8eaf6; --muted:#8a8fa8; --accent:#7c8cff; --gold:#d6b56f; --bad:#ff6b81;
+}
+* { box-sizing:border-box; }
+html, body { margin:0; height:100%; overflow:hidden; background:var(--bg); color:var(--text); font:14px var(--font); }
+canvas { display:block; width:100vw; height:100vh; image-rendering:pixelated; }
+button { font:inherit; color:var(--text); background:var(--accent); border:0; border-radius:6px; padding:6px 12px; cursor:pointer; }
+button:hover { filter:brightness(1.12); }
+button.ghost { background:var(--ghost); }
+kbd { font:inherit; font-size:11px; padding:0 4px; border:1px solid #fff5; border-radius:3px; margin-left:4px; opacity:.8; }
+
+#hud { position:fixed; top:12px; left:12px; right:12px; display:flex; gap:10px; align-items:center; pointer-events:none; }
+#hud > * { pointer-events:auto; }
+.hud-keys { background:#000a; padding:6px 10px; border-radius:6px; font-size:12px; color:#d8dbef; margin-right:auto; }
+
+#toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#000c; padding:8px 14px; border-radius:6px; font-size:13px; }
+
+#dlg { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); width:min(720px, calc(100vw - 32px));
+  background:#151724f2; border:2px solid var(--border); border-radius:10px; padding:14px 18px 10px; box-shadow:0 10px 40px #0009; }
+.dlg-head { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+#dlgWho { color:var(--gold); font-weight:700; letter-spacing:.04em; }
+#dlgNode { color:var(--muted); font-size:11px; }
+#dlgText { margin:0 0 10px; line-height:1.55; min-height:2.6em; font-size:15px; white-space:pre-wrap; }
+#dlgOpts { display:flex; flex-direction:column; gap:4px; }
+.opt { text-align:left; background:transparent; border:1px solid transparent; padding:6px 10px; border-radius:6px; }
+.opt:hover, .opt.sel { background:var(--ghost); border-color:var(--accent); filter:none; }
+.opt .num { color:var(--muted); margin-right:8px; }
+.opt.dead { color:var(--bad); }
+.end { color:var(--muted); font-style:italic; padding:4px 10px; }
+.warn { color:var(--bad); }
+.dlg-hint { color:var(--muted); font-size:11px; text-align:right; margin-top:6px; }
+
+#menu { position:fixed; inset:0; z-index:5; background:#0b0d16c4; backdrop-filter:blur(3px); overflow:auto; padding:40px 16px; display:flex; justify-content:center; align-items:flex-start; }
+#menu[hidden] { display:none; }
+.menu-box { width:min(640px, 100%); }
+.menu-title { text-align:center; }
+.menu-title h1 { margin:0; font-size:34px; color:var(--gold); letter-spacing:.06em; text-shadow:0 3px 0 #7f593a; }
+.sub { color:var(--muted); margin:8px 0 0; }
+.play { display:block; margin:20px auto 24px; font-size:16px; font-weight:700; padding:10px 32px; }
+.card { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:14px; }
+.card h2 { margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); }
+.drop { border:2px dashed var(--border); border-radius:8px; padding:18px 12px; text-align:center; display:flex; flex-direction:column; gap:12px; align-items:center; }
+.drop.over { border-color:var(--accent); background:#7c8cff14; }
+.drop-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+.give { color:var(--muted); font-size:12px; display:flex; gap:8px; align-items:center; }
+.menu-foot { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; color:var(--muted); font-size:12px; }
+.menu-foot a { color:var(--text); }
+#toast { z-index:20; }
+.modal { z-index:10; position:fixed; inset:0; background:#0009; display:flex; align-items:center; justify-content:center; padding:16px; }
+.modal[hidden], #dlg[hidden], #toast[hidden] { display:none; }
+.modal-box { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:18px 20px; width:min(620px, 100%); max-height:90vh; overflow:auto; }
+.modal-box h2 { margin:0 0 10px; font-size:16px; display:flex; justify-content:space-between; align-items:center; }
+.note { color:var(--muted); font-size:12px; line-height:1.5; }
+code { color:var(--text); }
+#npcList { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+#npcList li { display:grid; grid-template-columns:110px 1fr auto auto; gap:8px; align-items:center; background:var(--field); padding:8px 10px; border-radius:8px; }
+#npcList .who { display:flex; align-items:center; gap:8px; font-weight:500; }
+#npcList .dot { width:12px; height:12px; border-radius:3px; flex:none; }
+#npcList .info { grid-column:1 / -1; color:var(--muted); font-size:11px; }
+#npcList .info.bad { color:var(--bad); }
+select { font:inherit; color:var(--text); background:var(--panel); border:1px solid var(--border); border-radius:6px; padding:5px 6px; min-width:0; }
+textarea { width:100%; height:240px; font:12px var(--font); color:var(--text); background:var(--field); border:1px solid var(--border); border-radius:6px; padding:8px; resize:vertical; }
+.err { color:var(--bad); font-size:12px; min-height:1em; }
+.actions { display:flex; justify-content:flex-end; gap:8px; }
+
+@media (max-width:560px) {
+  .hud-keys { display:none; }
+  #hud { justify-content:flex-end; }
+  #npcList li { grid-template-columns:1fr auto auto; }
+  #npcList .who { grid-column:1 / -1; }
+}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <span class="hud-keys">WASD / arrows to walk · <b>E</b> to talk</span>
+  <button id="menuBtn">Menu <kbd>Esc</kbd></button>
+</div>
+
+<div id="toast" hidden></div>
+
+<div id="dlg" hidden>
+  <div class="dlg-head"><span id="dlgWho"></span><span id="dlgNode" title="Node id in Questline"></span></div>
+  <p id="dlgText"></p>
+  <div id="dlgOpts"></div>
+  <div class="dlg-hint" id="dlgHint"></div>
+</div>
+
+<div id="menu">
+  <div class="menu-box">
+    <div class="menu-title">
+      <h1>Questline Village</h1>
+      <p class="sub">Walk around, talk to villagers, test your dialogue trees.</p>
+    </div>
+    <button id="playBtn" class="play">▶ Play</button>
+
+    <section class="card">
+      <h2>Import dialogue</h2>
+      <div class="drop" id="drop">
+        <span>Drop a <code>dialogue.json</code> from <b>Export JSON</b> here</span>
+        <div class="drop-actions">
+          <button id="chooseFile">Choose file…</button>
+          <button class="ghost" id="pasteBtn">Paste Copy as JS…</button>
+        </div>
+        <label class="give">Give it to <select id="importTarget"></select></label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Villagers</h2>
+      <ul id="npcList"></ul>
+    </section>
+
+    <p class="menu-foot"><span>WASD / arrows to walk · <b>E</b> to talk · <b>Esc</b> for this menu</span><a href="../index.html">← Studio</a></p>
+  </div>
+</div>
+
+<div id="pasteModal" class="modal" hidden>
+  <div class="modal-box" role="dialog" aria-labelledby="pasteTitle">
+    <h2 id="pasteTitle">Paste dialogue</h2>
+    <textarea id="pasteText" spellcheck="false" placeholder='const dialogue = { "start": "n1", "nodes": { ... } };'></textarea>
+    <p class="err" id="pasteErr"></p>
+    <div class="actions"><button class="ghost" id="pasteCancel">Cancel</button><button id="pasteOk">Use this dialogue</button></div>
+  </div>
+</div>
+
+<input type="file" id="importFile" accept=".json,application/json" hidden>
+<script>
+/* Questline Village: a tiny top-down test game for dialogue trees made in the studio.
+   Kept as one self-contained file so it runs from a server, a double-click, or a file preview.
+   Reads the studio's export format { start, nodes: { id: { speaker, text, choices: [{ text, next }] } } }
+   and the studio's own saved format (choices use `to` instead of `next`). */
+const $ = s => document.querySelector(s);
+const STUDIO_KEY = 'npc-dialogue-studio-v1';        // autosave in js/state.js
+const STUDIO_SAVES_KEY = 'npc-dialogue-studio-saves-v1'; // named saves in js/saves.js
+const GAME_KEY = 'questline-game-v1';
+const T = 32; // tile size in world pixels
+
+/* ---------- Built-in demo dialogues (export format) ---------- */
+const BUILTIN = {
+  guard: { start: 'n1', nodes: {
+    n1: { speaker: 'Guard', text: 'Halt! State your business in Eldoria.', choices: [{ text: 'I seek the king.', next: 'n2' }, { text: 'Just passing through.', next: 'n3' }] },
+    n2: { speaker: 'Guard', text: 'The king sees no one today. Come back tomorrow.', choices: [] },
+    n3: { speaker: 'Guard', text: 'Then move along, traveler. And keep your sword sheathed.', choices: [] },
+  } },
+  mira: { start: 'a', nodes: {
+    a: { speaker: 'Mira', text: 'Fresh bread, dried herbs, slightly-used rope! What catches your eye?', choices: [{ text: 'What do you recommend?', next: 'b' }, { text: 'Heard any rumours?', next: 'c' }, { text: 'Nothing today.', next: null }] },
+    b: { speaker: 'Mira', text: 'The honey loaf. Old Fen swears it\'s the only thing the river fish won\'t steal.', choices: [{ text: 'I\'ll take one.', next: 'd' }, { text: 'Back to the stall.', next: 'a' }] },
+    c: { speaker: 'Mira', text: 'They say something glows under the bridge at night. Fen won\'t talk about it.', choices: [{ text: 'Interesting...', next: 'a' }] },
+    d: { speaker: 'Mira', text: 'Pleasure doing business! Mind the crumbs.', choices: [] },
+  } },
+  fen: { start: 'f1', nodes: {
+    f1: { speaker: 'Old Fen', text: '...Shh. You\'ll scare the fish.', choices: [{ text: 'Caught anything?', next: 'f2' }, { text: 'What glows under the bridge?', next: 'f3' }] },
+    f2: { speaker: 'Old Fen', text: 'A boot, two sticks, and a deep sense of patience.', choices: [{ text: 'Good luck.', next: null }] },
+    f3: { speaker: 'Old Fen', text: '*long stare* ...Who told you that? Mira? Of course it was Mira.', choices: [{ text: 'So it\'s true?', next: 'f4' }, { text: 'Never mind.', next: null }] },
+    f4: { speaker: 'Old Fen', text: 'Come back when you\'ve got a better story of your own.', choices: [] },
+  } },
+  pip: { start: 'p1', nodes: {
+    p1: { speaker: 'Pip', text: 'Wanna play tag? You\'re it! ...Wait, you can\'t run. That\'s no fun.', choices: [{ text: 'I can run!', next: 'p2' }, { text: 'Maybe later.', next: 'p3' }] },
+    p2: { speaker: 'Pip', text: 'Prove it! Run around the whole village and come back!', choices: [] },
+    p3: { speaker: 'Pip', text: 'Grown-ups always say that.', choices: [] },
+  } },
+};
+
+/* ---------- Map ---------- */
+const MW = 40, MH = 28;
+const SOLID = new Set(['#', '~', 'R', 'H', 'D', 'F', 'S', 'W']);
+const map = Array.from({ length: MH }, () => Array(MW).fill('.'));
+const set = (x, y, c) => { if (x >= 0 && y >= 0 && x < MW && y < MH) map[y][x] = c; };
+const rect = (x, y, w, h, c) => { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) set(i, j, c); };
+const hash = (x, y) => { let h = x * 374761393 + y * 668265263; h = (h ^ (h >> 13)) * 1274126177; return ((h ^ (h >> 16)) >>> 0) / 4294967295; };
+
+function house(x, y, w, h) {
+  rect(x, y, w, h - 2, 'R');      // roof
+  rect(x, y + h - 2, w, 2, 'H');  // walls
+  set(x + 1, y + h - 2, 'W'); set(x + w - 2, y + h - 2, 'W'); // windows
+  set(x + (w >> 1), y + h - 1, 'D'); // door
+  return { door: [x + (w >> 1), y + h] };
+}
+
+(function buildMap() {
+  rect(0, 0, MW, MH, '.');
+  rect(28, 0, 3, MH, '~');                 // river
+  rect(2, 13, 34, 2, '=');                 // main road
+  rect(28, 13, 3, 2, 'B');                 // bridge
+  rect(12, 4, 2, 21, '=');                 // north-south road
+  for (const [hx, hy, w, h] of [[4, 4, 6, 5], [16, 3, 7, 6], [16, 17, 6, 5], [4, 18, 6, 5]]) {
+    const { door } = house(hx, hy, w, h);
+    for (let y = door[1]; y < 13; y++) set(door[0], y, '=');   // north houses: path up to the main road
+    for (let y = door[1]; y > 14 && y <= 24; y++) set(door[0], y, '='); // south houses: path down to the lane
+  }
+  rect(4, 24, 17, 1, '=');                 // southern lane
+  rect(8, 16, 3, 1, 'S');                  // market stall
+  rect(2, 11, 9, 1, 'F'); set(7, 11, '='); // garden fence, gap at the path
+  // scatter trees and flowers on open grass, keeping roads clear
+  rect(34, 6, 3, 3, ',');                  // flower clearing in the forest
+  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+    if (map[y][x] !== '.') continue;
+    const edge = x < 1 || y < 1 || x >= MW - 1 || y >= MH - 1;
+    const nearRoad = [[0, 1], [0, -1], [1, 0], [-1, 0]].some(([dx, dy]) => (map[y + dy] || [])[x + dx] === '=');
+    const forest = x > 31 && !(x >= 34 && x <= 36 && y >= 6 && y <= 8);
+    const r = hash(x, y);
+    if (edge || (!nearRoad && r < (forest ? 0.32 : 0.05))) map[y][x] = '#';
+    else if (r > 0.93) map[y][x] = ',';
+  }
+  // keep trees off the NPCs and the spots around them
+  for (const [x, y] of [[26, 12], [11, 16], [27, 6], [20, 11]])
+    for (let j = y - 1; j <= y + 1; j++) for (let i = x - 1; i <= x + 1; i++) if (map[j][i] === '#' || map[j][i] === ',') map[j][i] = '.';
+})();
+
+const solidAt = (px, py) => {
+  const x = Math.floor(px / T), y = Math.floor(py / T);
+  return x < 0 || y < 0 || x >= MW || y >= MH || SOLID.has(map[y][x]);
+};
+
+/* ---------- Characters ---------- */
+const player = { x: 13 * T + 4, y: 15 * T, dir: 'down', step: 0, moving: false,
+  look: { shirt: '#7c8cff', pants: '#3b3f63', hair: '#5a3a22', skin: '#f2c9a0' } };
+
+const NPCS = [
+  { id: 'guard', name: 'Guard', x: 26, y: 12, dir: 'right', look: { shirt: '#8a96a8', pants: '#4a5060', hair: '#9aa4b4', skin: '#e8b98f', helmet: true } },
+  { id: 'mira',  name: 'Mira',  x: 11, y: 16, dir: 'down',    look: { shirt: '#d97a5a', pants: '#6b3c3c', hair: '#2b1b14', skin: '#c98d62' } },
+  { id: 'fen',   name: 'Old Fen', x: 27, y: 6, dir: 'right', look: { shirt: '#6a8a5a', pants: '#4c4030', hair: '#dddddd', skin: '#e6b48c' } },
+  { id: 'pip',   name: 'Pip',   x: 20, y: 11, dir: 'down',  look: { shirt: '#f0c84a', pants: '#3a6ea5', hair: '#c4622d', skin: '#f5d0ae' }, small: true },
+].map(n => ({ ...n, x: n.x * T + 4, y: n.y * T + 8, homeDir: n.dir }));
+
+const W_BOX = 24, H_BOX = 14; // collision box at the feet
+function blocked(x, y, self) {
+  const pts = [[x, y], [x + W_BOX, y], [x, y + H_BOX], [x + W_BOX, y + H_BOX]];
+  if (pts.some(([px, py]) => solidAt(px, py + 10))) return true;
+  return NPCS.some(n => n !== self && x < n.x + W_BOX && x + W_BOX > n.x && y < n.y + H_BOX && y + H_BOX > n.y);
+}
+
+/* ---------- Dialogue sources ---------- */
+function readJSON(key, fallback) { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch (e) { return fallback; } }
+let assign = readJSON(GAME_KEY, {});
+function saveAssign() { try { localStorage.setItem(GAME_KEY, JSON.stringify(assign)); } catch (e) {} }
+// If the studio's story is readable (same browser storage), the guard plays it by default; otherwise demo lines.
+const sourceOf = npc => assign[npc.id]?.src || (npc.id === 'guard' && readJSON(STUDIO_KEY, null) ? 'current' : 'builtin');
+
+/* Accept the export format, the studio's saved format, or "Copy as JS" text. */
+function normalize(raw) {
+  if (typeof raw === 'string') {
+    const s = raw.trim().replace(/^(const|let|var)\s+\w+\s*=\s*/, '').replace(/;\s*$/, '');
+    raw = JSON.parse(s);
+  }
+  if (!raw || typeof raw.nodes !== 'object') throw new Error('no "nodes" object found');
+  const nodes = {};
+  for (const [id, n] of Object.entries(raw.nodes))
+    nodes[id] = { speaker: n.speaker || '', text: n.text || '',
+      choices: (n.choices || []).map(c => ({ text: c.text || '', next: c.next ?? c.to ?? null })) };
+  const start = raw.start in nodes ? raw.start : Object.keys(nodes)[0];
+  if (!start) throw new Error('the story has no nodes');
+  return { start, nodes };
+}
+
+/* Resolve an NPC's dialogue right when you talk, so studio edits show up without reloading. */
+function dialogueFor(npc) {
+  const src = sourceOf(npc);
+  try {
+    if (src === 'current') {
+      const d = readJSON(STUDIO_KEY, null);
+      if (d) return { tree: normalize(d), label: 'Current Questline story' };
+      return { tree: BUILTIN[npc.id], label: 'Built-in (no studio story found yet)' };
+    }
+    if (src.startsWith('save:')) {
+      const slot = readJSON(STUDIO_SAVES_KEY, []).find(s => s.name === src.slice(5));
+      if (slot) return { tree: normalize(slot.data), label: `Save "${slot.name}"` };
+      return { tree: BUILTIN[npc.id], label: `Save "${src.slice(5)}" is missing, using built-in` };
+    }
+    if (src === 'custom' && assign[npc.id]?.data) return { tree: normalize(assign[npc.id].data), label: assign[npc.id].name || 'Imported' };
+  } catch (e) {
+    return { tree: BUILTIN[npc.id], label: `Couldn't read dialogue (${e.message}), using built-in`, bad: true };
+  }
+  return { tree: BUILTIN[npc.id], label: 'Built-in demo' };
+}
+
+/* ---------- Dialogue box ---------- */
+const dlg = $('#dlg'), dlgWho = $('#dlgWho'), dlgNode = $('#dlgNode'), dlgText = $('#dlgText'), dlgOpts = $('#dlgOpts'), dlgHint = $('#dlgHint');
+let talk = null; // { npc, tree, id, typing, sel, ended }
+
+function startTalk(npc) {
+  const { tree } = dialogueFor(npc);
+  // Face each other
+  const dx = player.x - npc.x, dy = player.y - npc.y;
+  npc.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+  talk = { npc, tree, id: null, typing: null, sel: 0, ended: false };
+  dlg.hidden = false;
+  show(tree.start);
+}
+
+function endTalk() {
+  if (!talk) return;
+  clearInterval(talk.typing?.timer);
+  talk.npc.dir = talk.npc.homeDir;
+  talk = null; dlg.hidden = true;
+}
+
+function show(id) {
+  const n = talk.tree.nodes[id];
+  talk.id = id; talk.sel = 0; talk.ended = false;
+  dlgOpts.innerHTML = '';
+  dlgNode.textContent = id ?? '';
+  if (!n) {
+    dlgWho.textContent = talk.npc.name;
+    dlgText.innerHTML = `<span class="warn">(missing node "${esc(id)}" — a choice points somewhere that doesn't exist)</span>`;
+    return finishNode([]);
+  }
+  dlgWho.textContent = n.speaker || talk.npc.name;
+  typeOut(n.text || '…', () => finishNode(n.choices));
+}
+
+function typeOut(text, done) {
+  let i = 0;
+  dlgText.textContent = '';
+  dlgHint.textContent = 'E / Space to skip';
+  const timer = setInterval(() => {
+    dlgText.textContent = text.slice(0, ++i);
+    if (i >= text.length) talk.typing.finish();
+  }, 1000 / 55);
+  talk.typing = { timer, finish() { clearInterval(timer); talk.typing = null; dlgText.textContent = text; done(); } };
+}
+
+function finishNode(choices) {
+  if (!choices.length) {
+    talk.ended = true;
+    dlgOpts.innerHTML = '<div class="end">— end of conversation —</div>';
+    dlgHint.textContent = 'E / Space to close';
+    return;
+  }
+  choices.forEach((c, i) => {
+    const b = document.createElement('button');
+    const dead = c.next && !talk.tree.nodes[c.next];
+    b.className = 'opt' + (dead ? ' dead' : '');
+    b.title = dead ? `Points to missing node "${c.next}"` : c.next ? `→ ${c.next}` : 'Ends the conversation';
+    b.innerHTML = `<span class="num">${i + 1}.</span>${esc(c.text || '(empty reply)')}`;
+    b.onclick = () => pick(i);
+    b.onmouseenter = () => { talk.sel = i; highlight(); };
+    dlgOpts.appendChild(b);
+  });
+  dlgHint.textContent = '↑↓ / 1–9 to choose · E to confirm · Esc to leave';
+  highlight();
+}
+
+function highlight() { [...dlgOpts.querySelectorAll('.opt')].forEach((b, i) => b.classList.toggle('sel', i === talk.sel)); }
+
+function pick(i) {
+  const c = talk.tree.nodes[talk.id]?.choices[i];
+  if (!c) return;
+  if (c.next == null || c.next === '') endTalk(); else show(c.next);
+}
+
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+
+dlg.addEventListener('click', e => { if (!e.target.closest('.opt')) talk?.typing?.finish(); });
+
+let walkTarget = null;
+
+/* ---------- Main menu ---------- */
+const menu = $('#menu'), npcList = $('#npcList'), importFile = $('#importFile'), importTarget = $('#importTarget'), drop = $('#drop');
+let importFor = [];   // villagers the next imported/pasted dialogue goes to
+let started = false;
+
+importTarget.innerHTML = NPCS.map(n => `<option value="${n.id}">${esc(n.name)}</option>`).join('') + '<option value="*">Everyone</option>';
+const chosenTargets = () => importTarget.value === '*' ? NPCS : NPCS.filter(n => n.id === importTarget.value);
+
+function renderMenu() {
+  const saves = readJSON(STUDIO_SAVES_KEY, []);
+  const hasCurrent = !!readJSON(STUDIO_KEY, null);
+  npcList.innerHTML = '';
+  for (const npc of NPCS) {
+    const src = sourceOf(npc);
+    const opts = [['builtin', 'Built-in demo'], ['current', 'Current Questline story' + (hasCurrent ? '' : ' (none found)')],
+      ...saves.map(s => ['save:' + s.name, 'Save: ' + s.name])];
+    if (assign[npc.id]?.data) opts.push(['custom', 'Imported: ' + (assign[npc.id].name || 'file')]);
+    if (src.startsWith('save:') && !opts.some(o => o[0] === src)) opts.push([src, src.slice(5) + ' (missing)']);
+    const { label, bad } = dialogueFor(npc);
+    const li = document.createElement('li');
+    li.innerHTML = `<span class="who"><span class="dot" style="background:${npc.look.shirt}"></span>${esc(npc.name)}</span>
+      <select>${opts.map(([v, t]) => `<option value="${esc(v)}"${v === src ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>
+      <button class="ghost" data-act="file">File…</button><button class="ghost" data-act="paste">Paste…</button>
+      <span class="info${bad ? ' bad' : ''}">Using: ${esc(label)}</span>`;
+    li.querySelector('select').onchange = e => { assign[npc.id] = { ...assign[npc.id], src: e.target.value }; saveAssign(); renderMenu(); };
+    li.querySelector('[data-act=file]').onclick = () => { importFor = [npc]; importFile.click(); };
+    li.querySelector('[data-act=paste]').onclick = () => openPaste([npc]);
+    npcList.appendChild(li);
+  }
+}
+
+function setCustom(npcs, data, name) {
+  normalize(data); // throws if invalid
+  for (const npc of npcs) assign[npc.id] = { src: 'custom', data, name };
+  saveAssign(); renderMenu();
+  toast(`${npcs.length === NPCS.length ? 'Everyone' : npcs.map(n => n.name).join(', ')} now ${npcs.length > 1 ? 'use' : 'uses'} ${name}`);
+}
+
+async function importFromFile(f, npcs) {
+  if (!f) return;
+  try { setCustom(npcs, JSON.parse(await f.text()), f.name); }
+  catch (err) { toast(`Couldn't use ${f.name}: ${err.message}`); }
+}
+importFile.onchange = e => { const f = e.target.files[0]; e.target.value = ''; importFromFile(f, importFor); };
+$('#chooseFile').onclick = () => { importFor = chosenTargets(); importFile.click(); };
+$('#pasteBtn').onclick = () => openPaste(chosenTargets());
+
+// Drag a file anywhere onto the menu
+menu.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+menu.addEventListener('dragleave', e => { if (!menu.contains(e.relatedTarget)) drop.classList.remove('over'); });
+menu.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); importFromFile(e.dataTransfer.files[0], chosenTargets()); });
+
+const pasteModal = $('#pasteModal'), pasteText = $('#pasteText'), pasteErr = $('#pasteErr');
+let pasteFor = [];
+function openPaste(npcs) { pasteFor = npcs; pasteText.value = ''; pasteErr.textContent = ''; pasteModal.hidden = false; pasteText.focus(); }
+$('#pasteCancel').onclick = () => { pasteModal.hidden = true; };
+$('#pasteOk').onclick = () => {
+  try { setCustom(pasteFor, normalize(pasteText.value), 'pasted dialogue'); pasteModal.hidden = true; }
+  catch (err) { pasteErr.textContent = 'Not a valid dialogue: ' + err.message; }
+};
+
+function openMenu() { endTalk(); keys.clear(); walkTarget = null; renderMenu(); menu.hidden = false; }
+function play() { started = true; $('#playBtn').textContent = '▶ Resume'; menu.hidden = true; }
+$('#playBtn').onclick = play;
+$('#menuBtn').onclick = openMenu;
+
+let toastTimer;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, 2600); }
+
+/* ---------- Input ---------- */
+const keys = new Set();
+const anyModal = () => !menu.hidden || !pasteModal.hidden;
+window.addEventListener('keydown', e => {
+  if (!pasteModal.hidden) { if (e.key === 'Escape') pasteModal.hidden = true; return; }
+  if (!menu.hidden) {
+    if (e.key === 'Escape' && started) play();
+    else if (e.key === 'Enter' && e.target === document.body) play();
+    return;
+  }
+  const k = e.key.toLowerCase();
+  if (talk) {
+    const count = dlgOpts.querySelectorAll('.opt').length;
+    if (['e', ' ', 'enter'].includes(k)) {
+      e.preventDefault();
+      if (talk.typing) talk.typing.finish();
+      else if (talk.ended) endTalk();
+      else if (count) pick(talk.sel);
+    } else if (k === 'escape') endTalk();
+    else if (k === 'tab') { e.preventDefault(); openMenu(); }
+    else if ((k === 'arrowdown' || k === 's') && count) { talk.sel = (talk.sel + 1) % count; highlight(); e.preventDefault(); }
+    else if ((k === 'arrowup' || k === 'w') && count) { talk.sel = (talk.sel + count - 1) % count; highlight(); e.preventDefault(); }
+    else if (/^[1-9]$/.test(k) && !talk.typing && +k <= count) pick(+k - 1);
+    return;
+  }
+  if (k === 'escape' || k === 'tab') { e.preventDefault(); openMenu(); return; }
+  if (k === 'e' || k === ' ' || k === 'enter') { const n = nearbyNpc(); if (n) { e.preventDefault(); startTalk(n); } return; }
+  if (k.startsWith('arrow') || 'wasd'.includes(k)) e.preventDefault();
+  keys.add(k);
+});
+window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
+window.addEventListener('blur', () => keys.clear());
+
+// Click/tap an NPC next to you to talk; tap the ground to walk there.
+const canvas = $('#game'), ctx = canvas.getContext('2d');
+canvas.addEventListener('pointerdown', e => {
+  if (talk) { talk.typing?.finish(); if (talk.ended) endTalk(); return; }
+  const wx = e.clientX / scale + cam.x, wy = e.clientY / scale + cam.y;
+  const hit = NPCS.find(n => wx > n.x - 4 && wx < n.x + W_BOX + 4 && wy > n.y - 26 && wy < n.y + H_BOX + 10);
+  if (hit && hit === nearbyNpc()) return startTalk(hit);
+  walkTarget = { x: wx - W_BOX / 2, y: wy - H_BOX / 2, npc: hit };
+});
+
+function nearbyNpc() {
+  let best = null, bestD = 46;
+  for (const n of NPCS) {
+    const d = Math.hypot(n.x - player.x, n.y - player.y);
+    if (d < bestD) { best = n; bestD = d; }
+  }
+  return best;
+}
+
+/* ---------- Update & render ---------- */
+let scale = 2, cam = { x: 0, y: 0 };
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = innerWidth * dpr; canvas.height = innerHeight * dpr;
+  scale = Math.max(1.5, Math.min(3, Math.min(innerWidth / (16 * T), innerHeight / (11 * T))));
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+addEventListener('resize', resize); resize();
+
+const SPEED = 130; // px per second
+function update(dt) {
+  let dx = 0, dy = 0;
+  if (!talk && !anyModal()) {
+    if (keys.has('arrowleft') || keys.has('a')) dx -= 1;
+    if (keys.has('arrowright') || keys.has('d')) dx += 1;
+    if (keys.has('arrowup') || keys.has('w')) dy -= 1;
+    if (keys.has('arrowdown') || keys.has('s')) dy += 1;
+    if (dx || dy) walkTarget = null;
+    else if (walkTarget) {
+      const tx = walkTarget.x - player.x, ty = walkTarget.y - player.y, d = Math.hypot(tx, ty);
+      if (walkTarget.npc && walkTarget.npc === nearbyNpc()) { const n = walkTarget.npc; walkTarget = null; startTalk(n); }
+      else if (d < 3) walkTarget = null;
+      else { dx = tx / d; dy = ty / d; }
+    }
+  }
+  player.moving = !!(dx || dy);
+  if (player.moving) {
+    const len = Math.hypot(dx, dy), sx = dx / len * SPEED * dt, sy = dy / len * SPEED * dt;
+    const bx = player.x, by = player.y;
+    if (!blocked(player.x + sx, player.y, player)) player.x += sx;
+    if (!blocked(player.x, player.y + sy, player)) player.y += sy;
+    if (walkTarget && player.x === bx && player.y === by) walkTarget = null; // stuck: give up
+    player.dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+    player.step += dt * 10;
+  } else player.step = 0;
+
+  const vw = innerWidth / scale, vh = innerHeight / scale;
+  cam.x = Math.max(0, Math.min(MW * T - vw, player.x + W_BOX / 2 - vw / 2));
+  cam.y = Math.max(0, Math.min(MH * T - vh, player.y - vh / 2));
+  if (MW * T < vw) cam.x = (MW * T - vw) / 2;
+  if (MH * T < vh) cam.y = (MH * T - vh) / 2;
+}
+
+function drawTile(c, x, y, t) {
+  const px = x * T, py = y * T, r = hash(x, y);
+  const grass = () => { ctx.fillStyle = r < 0.5 ? '#5d9a4a' : '#61a04e'; ctx.fillRect(px, py, T, T);
+    ctx.fillStyle = '#4f8a3e'; ctx.fillRect(px + (r * 23 | 0), py + (r * 97 % 27 | 0), 2, 3); };
+  switch (c) {
+    case '.': grass(); break;
+    case ',': grass();
+      ctx.fillStyle = r > 0.965 ? '#f4e36b' : '#f28fb0';
+      ctx.fillRect(px + 8, py + 10, 4, 4); ctx.fillRect(px + 20, py + 18, 4, 4); ctx.fillRect(px + 13, py + 22, 3, 3); break;
+    case '=': ctx.fillStyle = '#c9a66b'; ctx.fillRect(px, py, T, T);
+      ctx.fillStyle = '#b8955c'; ctx.fillRect(px + (r * 25 | 0), py + (r * 71 % 25 | 0), 4, 3); break;
+    case '~': {
+      ctx.fillStyle = '#3d7fc4'; ctx.fillRect(px, py, T, T);
+      ctx.fillStyle = '#6aa6e0';
+      const o = Math.sin(t * 2 + x + y * 0.7) * 4;
+      ctx.fillRect(px + 6 + o, py + 8, 10, 2); ctx.fillRect(px + 16 - o, py + 22, 8, 2); break; }
+    case 'B': ctx.fillStyle = '#3d7fc4'; ctx.fillRect(px, py, T, T);
+      ctx.fillStyle = '#9b6b3e'; ctx.fillRect(px, py, T, T);
+      ctx.fillStyle = '#7d5230'; for (let i = 0; i < T; i += 8) ctx.fillRect(px + i, py, 1, T);
+      if (map[y - 1]?.[x] !== 'B') { ctx.fillStyle = '#5b3a20'; ctx.fillRect(px, py, T, 4); }
+      if (map[y + 1]?.[x] !== 'B') { ctx.fillStyle = '#5b3a20'; ctx.fillRect(px, py + T - 4, T, 4); } break;
+    case '#': grass();
+      ctx.fillStyle = '#00000030'; ctx.beginPath(); ctx.ellipse(px + 16, py + 27, 12, 4, 0, 0, 7); ctx.fill();
+      ctx.fillStyle = '#6b4a2b'; ctx.fillRect(px + 13, py + 18, 6, 10);
+      ctx.fillStyle = '#2f6b34'; ctx.beginPath(); ctx.arc(px + 16, py + 13, 12, 0, 7); ctx.fill();
+      ctx.fillStyle = '#3c8442'; ctx.beginPath(); ctx.arc(px + 13, py + 10, 7, 0, 7); ctx.fill(); break;
+    case 'R': ctx.fillStyle = (y % 2) ? '#a8463a' : '#b8503f'; ctx.fillRect(px, py, T, T);
+      ctx.fillStyle = '#8e3a30'; ctx.fillRect(px, py + T - 3, T, 3); break;
+    case 'H': case 'W': case 'D':
+      ctx.fillStyle = '#e8d8b8'; ctx.fillRect(px, py, T, T);
+      ctx.fillStyle = '#cbb894'; ctx.fillRect(px, py + T - 2, T, 2);
+      if (c === 'W') { ctx.fillStyle = '#5a4030'; ctx.fillRect(px + 7, py + 6, 18, 14); ctx.fillStyle = '#9fd0f0'; ctx.fillRect(px + 9, py + 8, 14, 10); ctx.fillStyle = '#5a4030'; ctx.fillRect(px + 15, py + 8, 2, 10); }
+      if (c === 'D') { ctx.fillStyle = '#6b4226'; ctx.fillRect(px + 8, py + 4, 16, T - 4); ctx.fillStyle = '#e0b84a'; ctx.fillRect(px + 20, py + 18, 2, 2); }
+      break;
+    case 'F': grass(); ctx.fillStyle = '#d8c7a0';
+      ctx.fillRect(px, py + 12, T, 3); ctx.fillRect(px, py + 20, T, 3); ctx.fillRect(px + 4, py + 8, 4, 18); ctx.fillRect(px + 22, py + 8, 4, 18); break;
+    case 'S': ctx.fillStyle = '#c9a66b'; ctx.fillRect(px, py, T, T);
+      ctx.fillStyle = '#8a5a34'; ctx.fillRect(px, py + 12, T, 20);
+      ctx.fillStyle = x % 2 ? '#f0e6d0' : '#d9534f'; ctx.fillRect(px, py, T, 12);
+      ctx.fillStyle = ['#e9c46a', '#e76f51', '#90be6d'][x % 3]; ctx.fillRect(px + 6, py + 14, 8, 6); ctx.fillRect(px + 18, py + 15, 7, 5); break;
+  }
+}
+
+function drawChar(ch, t) {
+  const L = ch.look, s = ch.small ? 0.8 : 1;
+  const cx = ch.x + W_BOX / 2, feet = ch.y + H_BOX + 8;
+  const bob = ch.moving ? Math.abs(Math.sin(ch.step)) * 2 : Math.sin(t * 2 + ch.x) * 0.6;
+  ctx.save(); ctx.translate(cx, feet); ctx.scale(s, s);
+  ctx.fillStyle = '#00000038'; ctx.beginPath(); ctx.ellipse(0, 0, 10, 4, 0, 0, 7); ctx.fill();
+  const leg = ch.moving ? Math.sin(ch.step) * 3 : 0;
+  ctx.fillStyle = L.pants; ctx.fillRect(-6, -10 + leg * 0.3, 5, 9 - leg); ctx.fillRect(1, -10 - leg * 0.3, 5, 9 + leg);
+  ctx.translate(0, -bob);
+  ctx.fillStyle = L.shirt; ctx.fillRect(-8, -24, 16, 15);
+  ctx.fillStyle = L.skin;  ctx.fillRect(-11, -22, 3, 9); ctx.fillRect(8, -22, 3, 9); // arms
+  ctx.fillRect(-7, -38, 14, 14); // head
+  ctx.fillStyle = L.helmet ? '#b8c0cc' : L.hair;
+  if (ch.dir === 'up') ctx.fillRect(-8, -40, 16, 14);
+  else { ctx.fillRect(-8, -40, 16, 5); if (ch.dir !== 'right') ctx.fillRect(-8, -36, 3, 6); if (ch.dir !== 'left') ctx.fillRect(5, -36, 3, 6); }
+  if (L.helmet) { ctx.fillStyle = '#d6b56f'; ctx.fillRect(-1, -44, 2, 5); }
+  ctx.fillStyle = '#1b1d2a';
+  if (ch.dir === 'down') { ctx.fillRect(-4, -31, 2, 3); ctx.fillRect(2, -31, 2, 3); }
+  if (ch.dir === 'left') ctx.fillRect(-5, -31, 2, 3);
+  if (ch.dir === 'right') ctx.fillRect(3, -31, 2, 3);
+  ctx.restore();
+}
+
+function drawBubble(npc, t) {
+  const x = npc.x + W_BOX / 2, y = npc.y - 40 + Math.sin(t * 4) * 2;
+  ctx.fillStyle = '#fff'; ctx.strokeStyle = '#1b1d2a'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect(x - 9, y - 18, 18, 16, 4); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x - 3, y - 2.5); ctx.lineTo(x, y + 3); ctx.lineTo(x + 3, y - 2.5); ctx.fill();
+  ctx.fillStyle = '#1b1d2a'; ctx.font = 'bold 11px "Source Code Pro", monospace'; ctx.textAlign = 'center'; ctx.fillText('E', x, y - 6);
+}
+
+function drawName(npc) {
+  ctx.font = '500 9px "Source Code Pro", monospace'; ctx.textAlign = 'center';
+  const x = npc.x + W_BOX / 2, y = npc.y + H_BOX + 20, w = ctx.measureText(npc.name).width + 8;
+  ctx.fillStyle = '#000000a0'; ctx.fillRect(x - w / 2, y - 9, w, 12);
+  ctx.fillStyle = '#fff'; ctx.fillText(npc.name, x, y);
+}
+
+function render(t) {
+  ctx.fillStyle = '#1b1d2a'; ctx.fillRect(0, 0, innerWidth, innerHeight);
+  ctx.save(); ctx.scale(scale, scale); ctx.translate(-Math.round(cam.x * scale) / scale, -Math.round(cam.y * scale) / scale);
+  const x0 = Math.max(0, Math.floor(cam.x / T)), y0 = Math.max(0, Math.floor(cam.y / T));
+  const x1 = Math.min(MW, Math.ceil((cam.x + innerWidth / scale) / T) + 1), y1 = Math.min(MH, Math.ceil((cam.y + innerHeight / scale) / T) + 1);
+  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) drawTile(map[y][x], x, y, t);
+  if (walkTarget) { ctx.strokeStyle = '#ffffff90'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(walkTarget.x + W_BOX / 2, walkTarget.y + H_BOX + 8, 6, 3, 0, 0, 7); ctx.stroke(); }
+  [...NPCS, player].sort((a, b) => a.y - b.y).forEach(c => drawChar(c, t));
+  NPCS.forEach(drawName);
+  const near = !talk && nearbyNpc();
+  if (near) drawBubble(near, t);
+  ctx.restore();
+}
+
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  update(dt); render(now / 1000);
+  requestAnimationFrame(frame);
+}
+renderMenu(); // the game opens on the main menu
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

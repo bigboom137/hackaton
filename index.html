@@ -42,6 +42,7 @@
       <button role="menuitem" id="importBtn">Import JSON…</button>
       <button role="menuitem" id="exportBtn">Export JSON</button>
       <button role="menuitem" id="exportJs">Copy as JS</button>
+      <button role="menuitem" id="playGameBtn">Test in game ↗</button>
       <hr>
       <button role="menuitem" id="settingsBtn">Settings…</button>
       <button role="menuitem" id="menuItemHome">Main menu</button>
@@ -169,6 +170,7 @@ document.querySelector('#playBtn').onclick = async () => {
 continueBtn.onclick = openStudio;
 document.querySelector('#menuBtn').onclick = showMenu;
 document.querySelector('#menuItemHome').onclick = showMenu;
+document.querySelector('#playGameBtn').onclick = () => { save(); window.open('game/index.html', 'questline-game'); };
 showMenu();
 </script>
 </body>
