@@ -24,7 +24,8 @@ function render() {
         ${n.choices.map((c, i) => `
           <div class="choice" data-i="${i}">
             <input data-c="text" value="${esc(c.text)}" placeholder="Player reply">
-            <select data-c="to">${opts(c.to)}</select>
+            <select data-c="to" aria-label="Destination node">${opts(c.to)}</select>
+            <button type="button" class="link-port${c.to && data.nodes[c.to] ? ' connected' : ''}" data-link-port="${i}" title="Drag to connect to a node" aria-label="Drag to connect this choice"></button>
             <button class="mini" data-act="rmchoice">−</button>
           </div>`).join('')}
         <div><button class="ghost" data-act="addchoice">+ Choice</button>
@@ -46,12 +47,20 @@ function drawLinks() {
     const a = $('#el-' + id);
     n.choices.forEach((c, i) => {
       const b = c.to && $('#el-' + c.to);
-      if (!a || !b) return;
+      if (!a) return;
       const row = a.querySelectorAll('.choice')[i];
-      const x1 = a.offsetLeft + a.offsetWidth, y1 = a.offsetTop + (row ? row.offsetTop + row.offsetHeight / 2 : 20);
-      const x2 = b.offsetLeft, y2 = b.offsetTop + 20;
+      if (!row) return;
+      const x1 = a.offsetLeft + row.offsetLeft + row.offsetWidth + 6;
+      const y1 = a.offsetTop + row.offsetTop + row.offsetHeight / 2;
+      const draggingThis = linkDrag && linkDrag.fromId === id && linkDrag.choiceIndex === i;
+      const point = draggingThis ? clientToCanvas(linkDrag.cx, linkDrag.cy) : null;
+      const target = draggingThis ? null : b;
+      const x2 = target ? target.offsetLeft : point ? point.x : x1 + 38;
+      const y2 = target ? target.offsetTop + 20 : point ? point.y : y1;
       const dx = Math.max(40, Math.abs(x2 - x1) / 2);
-      html += `<path d="M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}" fill="none" style="stroke:var(--line)" stroke-width="2" marker-end="url(#ah)"/>`;
+      const path = `M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}`;
+      const cls = draggingThis ? 'link-dragging' : target ? 'choice-link' : 'link-unconnected';
+      html += `<path class="${cls}" d="${path}" fill="none" stroke="${draggingThis ? 'var(--accent)' : 'var(--line)'}" stroke-width="${draggingThis ? 3 : 2}" marker-end="url(#ah)" ${target || draggingThis ? '' : 'stroke-dasharray="4 5"'}/>`;
     });
   }
   svg.innerHTML = html;
@@ -81,6 +90,45 @@ canvas.addEventListener('input', e => {
   save();
 });
 canvas.addEventListener('change', e => { if (e.target.dataset.c === 'to') render(); });
+
+/* Drag a choice port onto a node to use the same destination as its dropdown. */
+let linkDrag = null;
+canvas.addEventListener('pointerdown', e => {
+  const port = e.target.closest('[data-link-port]');
+  if (!port) return;
+  const node = port.closest('.node');
+  linkDrag = {
+    pointerId: e.pointerId,
+    fromId: node.dataset.id,
+    choiceIndex: Number(port.dataset.linkPort),
+    x: e.clientX, y: e.clientY, cx: e.clientX, cy: e.clientY,
+    moved: false,
+  };
+  e.preventDefault();
+  e.stopPropagation();
+});
+window.addEventListener('pointermove', e => {
+  if (!linkDrag || e.pointerId !== linkDrag.pointerId) return;
+  linkDrag.cx = e.clientX; linkDrag.cy = e.clientY;
+  linkDrag.moved ||= Math.hypot(linkDrag.cx - linkDrag.x, linkDrag.cy - linkDrag.y) > 5;
+  if (linkDrag.moved) drawLinks();
+});
+function finishLinkDrag(e) {
+  if (!linkDrag || e.pointerId !== linkDrag.pointerId) return;
+  const link = linkDrag;
+  linkDrag = null;
+  if (link.moved) {
+    const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('.node');
+    const choice = data.nodes[link.fromId]?.choices[link.choiceIndex];
+    if (target && choice) {
+      choice.to = target.dataset.id;
+      selectedId = target.dataset.id;
+      render();
+    } else drawLinks();
+  }
+}
+window.addEventListener('pointerup', finishLinkDrag);
+window.addEventListener('pointercancel', finishLinkDrag);
 
 /* Selection: follows the mouse press and keyboard focus; cleared by empty-canvas click or Esc. */
 function selectNode(id) {

@@ -76,6 +76,10 @@ svg#links { position:absolute; left:0; top:0; width:1px; height:1px; overflow:vi
 .node .body { padding:6px; display:flex; flex-direction:column; gap:6px; }
 .choice { display:flex; gap:4px; align-items:center; position:relative; }
 .choice select { background:var(--field); color:var(--text); border:1px solid var(--border); border-radius:4px; max-width:84px; padding:4px 2px; font:inherit; }
+.choice .link-port { position:absolute; right:-13px; top:50%; z-index:4; width:14px; height:14px; padding:0; transform:translateY(-50%); border:2px solid var(--line); border-radius:50%; background:var(--panel); cursor:crosshair; touch-action:none; }
+.choice .link-port.connected { background:var(--line); }
+.choice .link-port:hover { transform:translateY(-50%) scale(1.2); background:var(--accent); filter:none; }
+.link-unconnected { opacity:.5; }
 .mini { padding:2px 6px; background:var(--ghost); color:var(--text); }
 #side { width:340px; background:var(--panel); border-left:1px solid var(--divider); display:flex; flex-direction:column; }
 #side h2 { font-size:14px; margin:0; padding:10px 12px; border-bottom:1px solid var(--divider); display:flex; justify-content:space-between; align-items:center; }
