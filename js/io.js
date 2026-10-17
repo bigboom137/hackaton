@@ -20,7 +20,7 @@ $('#exportBtn').onclick = () => {
 
 $('#exportJs').onclick = async () => {
   const code = 'const dialogue = ' + JSON.stringify(exportData(), null, 2) + ';\n';
-  try { await navigator.clipboard.writeText(code); $('#status').textContent = 'Copied!'; } catch (e) { prompt('Copy:', code); }
+  try { await navigator.clipboard.writeText(code); $('#status').textContent = 'Copied!'; } catch (e) { showText('Copy as JS', 'Clipboard access was blocked. Copy the code below.', code); }
 };
 
 $('#importBtn').onclick = () => $('#importFile').click();
@@ -36,16 +36,16 @@ $('#importFile').onchange = async e => {
     const nums = Object.keys(nodes).map(k => parseInt(k.replace(/\D/g, '')) || 0);
     data = { start: j.start, nodes, counter: Math.max(0, ...nums) + Object.keys(nodes).length };
     resetView(); render(); restart();
-  } catch (err) { alert('Invalid file: ' + err.message); }
+  } catch (err) { notify('Could not import', `That file isn't a valid dialogue export (${err.message}).`); }
   e.target.value = '';
 };
 
-function replaceStory(fresh, question) {
-  if (!confirm(question)) return;
+async function replaceStory(fresh, title, ok) {
+  if (!await ask(title, 'Unsaved changes to the current story will be lost.', { ok, danger: true })) return;
   data = fresh(); activeId = null; selectedId = null;
   resetView(); render(); restart();
 }
-$('#newBtn').onclick = () => replaceStory(blank, 'Start a blank story? Unsaved changes will be lost.');
+$('#newBtn').onclick = () => replaceStory(blank, 'Start a blank story?', 'Start blank');
 
 /* Toolbar dropdown: opens on click, closes on item pick, outside click or Esc. */
 const menuToggle = $('#menuToggle'), menuPanel = $('#menuPanel');
