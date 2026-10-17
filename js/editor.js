@@ -107,18 +107,19 @@ canvas.addEventListener('click', e => {
 
 /* drag nodes */
 let drag = null;
-canvas.addEventListener('mousedown', e => {
+canvas.addEventListener('pointerdown', e => {
   const el = e.target.closest('.node');
   if (!el || e.button !== 0 || e.target.closest('input,textarea,select,button')) return;
   e.preventDefault(); // don't start a text selection while dragging
   const n = data.nodes[el.dataset.id];
   drag = { el, n, mx: e.clientX, my: e.clientY, x0: n.x, y0: n.y };
 });
-window.addEventListener('mousemove', e => {
+window.addEventListener('pointermove', e => {
   if (!drag) return;
   drag.n.x = drag.x0 + (e.clientX - drag.mx) / zoom; drag.n.y = drag.y0 + (e.clientY - drag.my) / zoom;
   drag.el.style.left = drag.n.x + 'px'; drag.el.style.top = drag.n.y + 'px';
   updateBounds();
   drawLinks();
 });
-window.addEventListener('mouseup', () => { if (drag) { drag = null; save(); } });
+window.addEventListener('pointerup', () => { if (drag) { drag = null; save(); } });
+window.addEventListener('pointercancel', () => { if (drag) { drag = null; save(); } });

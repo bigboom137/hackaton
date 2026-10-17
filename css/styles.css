@@ -101,3 +101,45 @@ body { min-height:100vh; height:100vh; overflow:hidden; }
 .studio .brand-home { padding:0; border:0; border-radius:0; background:transparent; color:inherit; font:inherit; line-height:inherit; cursor:pointer; }
 .studio .brand-home:hover { filter:none; color:#f6e5c3; }
 .studio .brand-home:focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
+.mobile-preview-toggle, .mobile-preview-back { display:none; }
+
+/* Phone layout: edit the canvas full-screen, or switch to a full-screen preview. */
+@media (max-width:760px), (max-height:600px) and (orientation:landscape) {
+  body { height:100vh; height:100dvh; }
+  .studio { height:100vh; height:100dvh; }
+  .studio header { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:6px; padding:7px; }
+  .studio header h1 { grid-column:1 / -1; width:auto; margin:0 0 2px; }
+  .studio header #addNode { grid-column:1; }
+  .studio header .dropdown { grid-column:2; }
+  .studio header .mobile-preview-toggle { grid-column:3; }
+  .mobile-preview-toggle { display:inline-flex; align-items:center; justify-content:center; }
+  .studio header .zoom { grid-column:1 / -1; margin:0; }
+  .studio header #status { grid-column:1 / -1; }
+  #side { display:none; }
+  #canvasWrap { min-width:0; }
+  .node .head { touch-action:none; }
+  .studio.preview-open header { display:none; }
+  .studio.preview-open main { flex:1; min-height:0; }
+  .studio.preview-open #canvasWrap { display:none; }
+  .studio.preview-open #side { display:flex; width:100%; min-height:0; border:0; }
+  .studio.preview-open #side h2 { padding:10px; }
+  .mobile-preview-back { display:inline-flex; align-items:center; margin-right:6px; }
+  #preview { padding:14px; padding-bottom:calc(14px + env(safe-area-inset-bottom)); }
+}
+
+/* Mobile home artwork: use separate crops for portrait and landscape. */
+@media (max-width:760px) and (orientation:portrait) {
+  .title-screen { background-image:linear-gradient(180deg,#11182755,#0c111bcc),url("../assets/home-background-mobile-portrait.jpg"),radial-gradient(ellipse at 50% 38%,#29344b 0%,#151b2a 48%,#0c111b 100%); }
+  .title-content { width:min(90vw,440px); }
+  .title-logo.is-loaded { max-height:120px; }
+}
+@media (max-height:600px) and (orientation:landscape) {
+  .title-screen { background-image:linear-gradient(180deg,#11182755,#0c111bcc),url("../assets/home-background-mobile-landscape.jpg"),radial-gradient(ellipse at 50% 38%,#29344b 0%,#151b2a 48%,#0c111b 100%); }
+  .title-content { width:min(72vw,540px); margin:8px auto; }
+  .title-content h1 { margin-top:4px; font-size:clamp(42px,9vh,72px); }
+  .title-logo.is-loaded { max-height:76px; }
+  .title-subtitle { margin:6px 0 12px; font-size:14px; }
+  .menu-actions { grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+  .menu-actions button { min-height:36px; font-size:9px; }
+  .title-footer { margin-top:10px; }
+}

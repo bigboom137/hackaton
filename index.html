@@ -45,6 +45,7 @@
       <button role="menuitem" id="menuItemHome">Main menu</button>
     </div>
   </div>
+  <button class="ghost mobile-preview-toggle" id="mobilePreviewBtn" aria-pressed="false">Preview</button>
   <input type="file" id="importFile" accept=".json,application/json">
   <span id="status" class="warn"></span>
   <span class="zoom">
@@ -57,7 +58,7 @@
 <main>
   <div id="canvasWrap"><div id="sizer"><div id="canvas"><svg id="links"></svg></div></div></div>
   <aside id="side">
-    <h2>Preview Player <span><button class="ghost" id="restart">↻ Restart</button></span></h2>
+    <h2>Preview Player <span><button class="ghost mobile-preview-back" id="previewBack">← Editor</button><button class="ghost" id="restart">↻ Restart</button></span></h2>
     <div id="preview"></div>
   </aside>
 </main>
@@ -84,13 +85,23 @@ const titleScreen = document.querySelector('#titleScreen');
 const studio = document.querySelector('#studio');
 const menuNote = document.querySelector('#menuNote');
 const continueBtn = document.querySelector('#continueBtn');
+const mobilePreviewBtn = document.querySelector('#mobilePreviewBtn');
+const previewBack = document.querySelector('#previewBack');
+function setMobilePreview(open) {
+  studio.classList.toggle('preview-open', open);
+  mobilePreviewBtn.setAttribute('aria-pressed', String(open));
+}
+mobilePreviewBtn.onclick = () => setMobilePreview(true);
+previewBack.onclick = () => setMobilePreview(false);
 function hasSave() { try { return !!localStorage.getItem(KEY); } catch (e) { return false; } }
 function showMenu() {
   studio.hidden = true; titleScreen.hidden = false; document.body.classList.remove('in-studio');
+  setMobilePreview(false);
   continueBtn.disabled = !hasSave();
 }
 // Render only once the studio is visible: hidden elements measure as 0, which breaks the arrows.
 function openStudio() {
+  setMobilePreview(false);
   titleScreen.hidden = true; studio.hidden = false; document.body.classList.add('in-studio');
   render(); restart();
 }
