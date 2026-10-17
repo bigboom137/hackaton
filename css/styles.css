@@ -13,7 +13,12 @@ main { flex:1; display:flex; min-height:0; }
 #canvasWrap.panning #sizer { cursor:grabbing; }
 #canvas { position:absolute; left:0; top:0; width:0; height:0; transform-origin:0 0; cursor:default; }
 svg#links { position:absolute; left:0; top:0; width:1px; height:1px; overflow:visible; pointer-events:none; }
-.zoom { display:flex; gap:2px; margin-left:8px; }
+.zoom { display:flex; gap:2px; margin-left:auto; }
+.dropdown { position:relative; }
+.dropdown-panel { position:absolute; top:calc(100% + 4px); left:0; z-index:20; min-width:200px; display:flex; flex-direction:column; padding:4px; background:var(--panel); border:1px solid #3d4262; border-radius:6px; box-shadow:0 8px 24px #0009; }
+.dropdown-panel button { background:transparent; text-align:left; padding:7px 10px; }
+.dropdown-panel button:hover { background:#3a3f5c; filter:none; }
+.dropdown-panel hr { width:100%; margin:4px 0; border:0; border-top:1px solid #3d4262; }
 .zoom button { min-width:32px; }
 .node { position:absolute; width:260px; background:var(--node); border:2px solid #3d4262; border-radius:8px; box-shadow:0 4px 10px #0006; }
 .node.start { border-color:var(--good); }
