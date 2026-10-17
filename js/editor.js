@@ -14,7 +14,7 @@ function render() {
       ids.map(o => `<option value="${o}" ${o === sel ? 'selected' : ''}>${o}</option>`).join('');
     el.innerHTML = `
       <div class="head" data-drag="${id}">
-        <span class="id" title="Double-click to rename">${esc(id)}</span>
+        <button type="button" class="mini id" data-act="rename" title="Rename node ID" aria-label="Rename node ${esc(id)}">${esc(id)} ✎</button>
         <input data-f="speaker" value="${esc(n.speaker)}" placeholder="Speaker">
         <button class="mini" data-act="start" title="Set as start">▶</button>
         <button class="mini" data-act="del" title="Delete node">✕</button>
@@ -23,7 +23,7 @@ function render() {
         <textarea data-f="text" placeholder="What does the NPC say?">${esc(n.text)}</textarea>
         ${n.choices.map((c, i) => `
           <div class="choice" data-i="${i}">
-            <input data-c="text" value="${esc(c.text)}" placeholder="Player reply">
+            <textarea data-c="text" placeholder="Player reply">${esc(c.text)}</textarea>
             <select data-c="to" aria-label="Destination node">${opts(c.to)}</select>
             <button type="button" class="link-port${c.to && data.nodes[c.to] ? ' connected' : ''}" data-link-port="${i}" title="Drag to connect to a node" aria-label="Drag to connect this choice"></button>
             <button class="mini" data-act="rmchoice">−</button>
@@ -46,21 +46,20 @@ function drawLinks() {
   for (const [id, n] of Object.entries(data.nodes)) {
     const a = $('#el-' + id);
     n.choices.forEach((c, i) => {
-      const b = c.to && $('#el-' + c.to);
       if (!a) return;
       const row = a.querySelectorAll('.choice')[i];
       if (!row) return;
       const x1 = a.offsetLeft + row.offsetLeft + row.offsetWidth + 6;
       const y1 = a.offsetTop + row.offsetTop + row.offsetHeight / 2;
       const draggingThis = linkDrag && linkDrag.fromId === id && linkDrag.choiceIndex === i;
-      const point = draggingThis ? clientToCanvas(linkDrag.cx, linkDrag.cy) : null;
-      const target = draggingThis ? null : b;
+      const point = draggingThis && !linkDrag.targetId ? clientToCanvas(linkDrag.cx, linkDrag.cy) : null;
+      const target = draggingThis ? (linkDrag.targetId && $('#el-' + linkDrag.targetId)) : (c.to && $('#el-' + c.to));
       const x2 = target ? target.offsetLeft : point ? point.x : x1 + 38;
       const y2 = target ? target.offsetTop + 20 : point ? point.y : y1;
       const dx = Math.max(40, Math.abs(x2 - x1) / 2);
       const path = `M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}`;
       const cls = draggingThis ? 'link-dragging' : target ? 'choice-link' : 'link-unconnected';
-      html += `<path class="${cls}" d="${path}" fill="none" stroke="${draggingThis ? 'var(--accent)' : 'var(--line)'}" stroke-width="${draggingThis ? 3 : 2}" marker-end="url(#ah)" ${target || draggingThis ? '' : 'stroke-dasharray="4 5"'}/>`;
+      html += `<path class="${cls}" data-from="${esc(id)}" data-choice="${i}" d="${path}" fill="none" stroke="${draggingThis ? 'var(--accent)' : 'var(--line)'}" stroke-width="${draggingThis ? 3 : 2}" marker-end="url(#ah)" ${target || draggingThis ? '' : 'stroke-dasharray="4 5"'}/>`;
     });
   }
   svg.innerHTML = html;
@@ -91,27 +90,41 @@ canvas.addEventListener('input', e => {
 });
 canvas.addEventListener('change', e => { if (e.target.dataset.c === 'to') render(); });
 
-/* Drag a choice port onto a node to use the same destination as its dropdown. */
+/* Drag a choice port or an existing link onto a node to set its destination. */
 let linkDrag = null;
+function beginLinkDrag(fromId, choiceIndex, e) {
+  linkDrag = { pointerId: e.pointerId, fromId, choiceIndex, x: e.clientX, y: e.clientY,
+    cx: e.clientX, cy: e.clientY, moved: false, targetId: null };
+  e.preventDefault();
+  e.stopPropagation();
+}
 canvas.addEventListener('pointerdown', e => {
   const port = e.target.closest('[data-link-port]');
   if (!port) return;
   const node = port.closest('.node');
-  linkDrag = {
-    pointerId: e.pointerId,
-    fromId: node.dataset.id,
-    choiceIndex: Number(port.dataset.linkPort),
-    x: e.clientX, y: e.clientY, cx: e.clientX, cy: e.clientY,
-    moved: false,
-  };
-  e.preventDefault();
-  e.stopPropagation();
+  beginLinkDrag(node.dataset.id, Number(port.dataset.linkPort), e);
+});
+svg.addEventListener('pointerdown', e => {
+  const path = e.target.closest('path.choice-link[data-from][data-choice]');
+  if (!path) return;
+  const node = $('#el-' + path.dataset.from);
+  const row = node?.querySelectorAll('.choice')[Number(path.dataset.choice)];
+  if (!node || !row) return;
+  const sx = node.offsetLeft + row.offsetLeft + row.offsetWidth + 6;
+  const sy = node.offsetTop + row.offsetTop + row.offsetHeight / 2;
+  const p = clientToCanvas(e.clientX, e.clientY);
+  // Leave the connector's starting point for the port itself.
+  if (Math.hypot(p.x - sx, p.y - sy) * zoom < 18) return;
+  beginLinkDrag(path.dataset.from, Number(path.dataset.choice), e);
 });
 window.addEventListener('pointermove', e => {
   if (!linkDrag || e.pointerId !== linkDrag.pointerId) return;
   linkDrag.cx = e.clientX; linkDrag.cy = e.clientY;
   linkDrag.moved ||= Math.hypot(linkDrag.cx - linkDrag.x, linkDrag.cy - linkDrag.y) > 5;
-  if (linkDrag.moved) drawLinks();
+  if (linkDrag.moved) {
+    linkDrag.targetId = document.elementFromPoint(e.clientX, e.clientY)?.closest('.node')?.dataset.id || null;
+    drawLinks();
+  }
 });
 function finishLinkDrag(e) {
   if (!linkDrag || e.pointerId !== linkDrag.pointerId) return;
@@ -120,9 +133,10 @@ function finishLinkDrag(e) {
   if (link.moved) {
     const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('.node');
     const choice = data.nodes[link.fromId]?.choices[link.choiceIndex];
-    if (target && choice) {
-      choice.to = target.dataset.id;
-      selectedId = target.dataset.id;
+    const targetId = target?.dataset.id || link.targetId;
+    if (targetId && choice) {
+      choice.to = targetId;
+      selectedId = targetId;
       render();
     } else drawLinks();
   }
@@ -150,6 +164,7 @@ window.addEventListener('keydown', e => {
 canvas.addEventListener('click', e => {
   const act = e.target.dataset.act; if (!act) return;
   const el = e.target.closest('.node'), id = el.dataset.id, n = data.nodes[id];
+  if (act === 'rename') { promptRename(id); return; }
   if (act === 'start') data.start = id;
   else if (act === 'addchoice') n.choices.push({ text: '', to: '' });
   else if (act === 'addlinked') { addLinked(id); return; }
@@ -204,15 +219,10 @@ async function promptRename(id) {
   });
   if (name !== null) renameNode(id, name);
 }
-canvas.addEventListener('dblclick', e => {
-  const label = e.target.closest('.id');
-  if (label) promptRename(label.closest('.node').dataset.id);
-});
-
 /* Right-click menus. Text fields keep the browser's menu so copy/paste still work. */
 function nodeMenu(id) {
   return [
-    { label: 'Rename…', hint: 'dbl-click id', action: () => promptRename(id) },
+    { label: 'Rename…', hint: 'node header', action: () => promptRename(id) },
     { label: 'Set as start', disabled: data.start === id, action: () => { data.start = id; render(); } },
     { label: 'Preview from here', action: () => previewFrom(id) },
     '-',
