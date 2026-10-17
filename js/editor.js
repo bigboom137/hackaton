@@ -104,14 +104,47 @@ canvas.addEventListener('mousedown', e => {
   const el = e.target.closest('.node');
   if (!el || e.button !== 0 || e.target.closest('input,textarea,select,button')) return;
   e.preventDefault(); // don't start a text selection while dragging
-  const n = data.nodes[el.dataset.id];
-  drag = { el, n, mx: e.clientX, my: e.clientY, x0: n.x, y0: n.y };
+  const n = data.nodes[el.dataset.id], v = viewOrigin();
+  drag = { el, n, mx: e.clientX, my: e.clientY, cx: e.clientX, cy: e.clientY, x0: n.x, y0: n.y, vx0: v.x, vy0: v.y };
+  drag.raf = requestAnimationFrame(edgeScroll);
 });
-window.addEventListener('mousemove', e => {
-  if (!drag) return;
-  drag.n.x = drag.x0 + (e.clientX - drag.mx) / zoom; drag.n.y = drag.y0 + (e.clientY - drag.my) / zoom;
+
+/* Node follows the mouse, accounting for any scrolling since the drag began. */
+function moveDrag() {
+  const v = viewOrigin();
+  drag.n.x = drag.x0 + (v.x - drag.vx0) + (drag.cx - drag.mx) / zoom;
+  drag.n.y = drag.y0 + (v.y - drag.vy0) + (drag.cy - drag.my) / zoom;
   drag.el.style.left = drag.n.x + 'px'; drag.el.style.top = drag.n.y + 'px';
   updateBounds();
   drawLinks();
+}
+
+/* While dragging near (or past) the viewport edge, scroll that way. */
+const EDGE = 40, EDGE_SPEED = 18;
+function edgeSpeed(p, lo, hi) {
+  if (p < lo + EDGE) return -Math.min(EDGE_SPEED, (lo + EDGE - p) / 3);
+  if (p > hi - EDGE) return Math.min(EDGE_SPEED, (p - hi + EDGE) / 3);
+  return 0;
+}
+function edgeScroll() {
+  if (!drag) return;
+  if (!drag.moved) { drag.raf = requestAnimationFrame(edgeScroll); return; }
+  const r = wrap.getBoundingClientRect();
+  const sx = edgeSpeed(drag.cx, r.left, r.right), sy = edgeSpeed(drag.cy, r.top, r.bottom);
+  if (sx || sy) {
+    const v = viewOrigin();
+    updateBounds(v.x + sx / zoom, v.y + sy / zoom);
+    moveDrag();
+  }
+  drag.raf = requestAnimationFrame(edgeScroll);
+}
+
+window.addEventListener('mousemove', e => {
+  if (!drag) return;
+  drag.cx = e.clientX; drag.cy = e.clientY;
+  drag.moved ||= Math.hypot(drag.cx - drag.mx, drag.cy - drag.my) > 5;
+  moveDrag();
 });
-window.addEventListener('mouseup', () => { if (drag) { drag = null; save(); } });
+window.addEventListener('mouseup', () => {
+  if (drag) { cancelAnimationFrame(drag.raf); drag = null; save(); }
+});
