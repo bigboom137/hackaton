@@ -138,6 +138,7 @@ body { min-height:100vh; height:100vh; overflow:hidden; }
 .studio { height:100vh; display:flex; flex-direction:column; user-select:none; }
 .studio input, .studio textarea { user-select:text; }
 .node { cursor:move; }
+.node.carried { cursor:grabbing; z-index:3; }
 .node input, .node textarea, .node select, .node button { cursor:auto; }
 .node button { cursor:pointer; }
 .modal { position:fixed; inset:0; z-index:10; display:grid; place-items:center; padding:16px; background:var(--overlay); }

@@ -1,6 +1,14 @@
 /* Node canvas: rendering, editing, links and dragging. */
 const canvas = $('#canvas'), svg = $('#links');
 
+function choicePortCenter(id, index) {
+  const row = $('#el-' + id)?.querySelectorAll('.choice')[index];
+  const port = row?.querySelector('.link-port');
+  if (!port) return null;
+  const r = port.getBoundingClientRect();
+  return clientToCanvas(r.left + r.width / 2, r.top + r.height / 2);
+}
+
 function render() {
   canvas.querySelectorAll('.node').forEach(n => n.remove());
   const ids = Object.keys(data.nodes);
@@ -60,8 +68,9 @@ function drawLinks() {
       if (!a) return;
       const row = a.querySelectorAll('.choice')[i];
       if (!row) return;
-      const x1 = a.offsetLeft + row.offsetLeft + row.offsetWidth + 6;
-      const y1 = a.offsetTop + row.offsetTop + row.offsetHeight / 2;
+      const origin = choicePortCenter(id, i);
+      if (!origin) return;
+      const x1 = origin.x, y1 = origin.y;
       const draggingThis = linkDrag && linkDrag.fromId === id && linkDrag.choiceIndex === i;
       const point = draggingThis && !linkDrag.targetId ? clientToCanvas(linkDrag.cx, linkDrag.cy) : null;
       const target = draggingThis ? (linkDrag.targetId && $('#el-' + linkDrag.targetId)) : (c.to && $('#el-' + c.to));
@@ -120,14 +129,11 @@ canvas.addEventListener('pointerdown', e => {
 svg.addEventListener('pointerdown', e => {
   const path = e.target.closest('path.link-hit[data-from][data-choice]');
   if (!path) return;
-  const node = $('#el-' + path.dataset.from);
-  const row = node?.querySelectorAll('.choice')[Number(path.dataset.choice)];
-  if (!node || !row) return;
-  const sx = node.offsetLeft + row.offsetLeft + row.offsetWidth + 6;
-  const sy = node.offsetTop + row.offsetTop + row.offsetHeight / 2;
+  const origin = choicePortCenter(path.dataset.from, Number(path.dataset.choice));
+  if (!origin) return;
   const p = clientToCanvas(e.clientX, e.clientY);
   // Leave the connector's starting point for the port itself.
-  if (Math.hypot(p.x - sx, p.y - sy) * zoom < 18) return;
+  if (Math.hypot(p.x - origin.x, p.y - origin.y) * zoom < 18) return;
   beginLinkDrag(path.dataset.from, Number(path.dataset.choice), e);
 });
 window.addEventListener('pointermove', e => {
@@ -264,8 +270,38 @@ $('#canvasWrap').addEventListener('contextmenu', e => {
   else { const p = clientToCanvas(e.clientX, e.clientY); showContextMenu(e.clientX, e.clientY, canvasMenu(p.x, p.y)); }
 });
 
-/* drag nodes */
+/* Drag nodes normally, or click a node to carry it until the next canvas click. */
 let drag = null;
+let carry = null;
+wrap.addEventListener('click', e => {
+  if (carry) {
+    carry.el.classList.remove('carried');
+    carry = null;
+    save();
+    return;
+  }
+  const el = e.target.closest('.node');
+  if (!el || e.target.closest('input,textarea,select,button')) return;
+  const p = clientToCanvas(e.clientX, e.clientY), n = data.nodes[el.dataset.id];
+  carry = { el, n, offsetX:p.x - n.x, offsetY:p.y - n.y };
+  el.classList.add('carried');
+});
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && carry) {
+    carry.el.classList.remove('carried');
+    carry = null;
+    save();
+  }
+});
+window.addEventListener('pointermove', e => {
+  if (!carry) return;
+  const p = clientToCanvas(e.clientX, e.clientY);
+  let x = p.x - carry.offsetX, y = p.y - carry.offsetY;
+  if (settings.snap) { x = Math.round(x / GRID) * GRID; y = Math.round(y / GRID) * GRID; }
+  carry.n.x = x; carry.n.y = y;
+  carry.el.style.left = `${x}px`; carry.el.style.top = `${y}px`;
+  updateBounds(); drawLinks();
+});
 canvas.addEventListener('pointerdown', e => {
   const el = e.target.closest('.node');
   if (!el || e.button !== 0 || e.target.closest('input,textarea,select,button')) return;
