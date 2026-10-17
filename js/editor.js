@@ -33,6 +33,7 @@ function render() {
     el.dataset.id = id;
     canvas.appendChild(el);
   }
+  updateBounds();
   drawLinks();
   validate();
   save();
@@ -103,12 +104,13 @@ canvas.addEventListener('mousedown', e => {
   const h = e.target.closest('.head');
   if (!h || e.target.closest('input,button')) return;
   const el = h.parentElement, n = data.nodes[el.dataset.id];
-  drag = { el, n, ox: e.clientX - n.x, oy: e.clientY - n.y };
+  drag = { el, n, mx: e.clientX, my: e.clientY, x0: n.x, y0: n.y };
 });
 window.addEventListener('mousemove', e => {
   if (!drag) return;
-  drag.n.x = Math.max(0, e.clientX - drag.ox); drag.n.y = Math.max(0, e.clientY - drag.oy);
+  drag.n.x = drag.x0 + (e.clientX - drag.mx) / zoom; drag.n.y = drag.y0 + (e.clientY - drag.my) / zoom;
   drag.el.style.left = drag.n.x + 'px'; drag.el.style.top = drag.n.y + 'px';
+  updateBounds();
   drawLinks();
 });
 window.addEventListener('mouseup', () => { if (drag) { drag = null; save(); } });

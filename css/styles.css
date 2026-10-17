@@ -8,9 +8,13 @@ button.ghost { background:#3a3f5c; }
 button.danger { background:var(--bad); }
 button:hover { filter:brightness(1.1); }
 main { flex:1; display:flex; min-height:0; }
-#canvasWrap { flex:1; position:relative; overflow:auto; background-image:radial-gradient(#33374d 1px, transparent 1px); background-size:20px 20px; }
-#canvas { position:relative; width:3000px; height:2000px; }
-svg#links { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+#canvasWrap { flex:1; position:relative; overflow:auto; }
+#sizer { position:relative; overflow:hidden; cursor:grab; background-image:radial-gradient(#33374d 1px, transparent 1px); }
+#canvasWrap.panning #sizer { cursor:grabbing; }
+#canvas { position:absolute; left:0; top:0; width:0; height:0; transform-origin:0 0; cursor:default; }
+svg#links { position:absolute; left:0; top:0; width:1px; height:1px; overflow:visible; pointer-events:none; }
+.zoom { display:flex; gap:2px; margin-left:8px; }
+.zoom button { min-width:32px; }
 .node { position:absolute; width:260px; background:var(--node); border:2px solid #3d4262; border-radius:8px; box-shadow:0 4px 10px #0006; }
 .node.start { border-color:var(--good); }
 .node.active { border-color:#ffd166; }
