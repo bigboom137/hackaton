@@ -36,6 +36,7 @@
       <button role="menuitem" id="savesBtn">Save / Load…</button>
       <hr>
       <button role="menuitem" id="newBtn">New blank story</button>
+      <button role="menuitem" id="aiGenerateBtn">✨ Generate with AI…</button>
       <hr>
       <button role="menuitem" id="importBtn">Import JSON…</button>
       <button role="menuitem" id="exportBtn">Export JSON</button>
@@ -99,6 +100,11 @@
         <select data-set="textSize" data-num><option value="13">Small</option><option value="14">Medium</option><option value="16">Large</option></select></label>
     </fieldset>
     <fieldset>
+      <legend>AI</legend>
+      <label class="set-row"><span>AI server URL</span><input type="text" class="wide" data-set="aiUrl" placeholder="https://questline-ai.….workers.dev" spellcheck="false" autocomplete="off"></label>
+      <p class="set-note">Used by ✨ Generate with AI and Expand with AI. Deploy the worker in <code>worker/</code> to get a URL.</p>
+    </fieldset>
+    <fieldset>
       <legend>Data</legend>
       <div class="set-actions"><button class="ghost" id="resetSettings">Reset settings</button><button class="danger" id="clearData">Delete all saved data</button></div>
     </fieldset>
@@ -113,6 +119,7 @@
 <script src="js/io.js"></script>
 <script src="js/saves.js"></script>
 <script src="js/settings.js"></script>
+<script src="js/ai.js"></script>
 <script>
 const titleScreen = document.querySelector('#titleScreen');
 const studio = document.querySelector('#studio');
