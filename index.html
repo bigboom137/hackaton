@@ -1,20 +1,40 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NPC Dialogue Branching Studio</title>
+<title>Questline</title>
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+<section id="titleScreen" class="title-screen" aria-label="Questline main menu">
+  <div class="title-grain" aria-hidden="true"></div>
+  <div class="title-content">
+    <div class="eyebrow"><span></span> A TALE WAITING TO BE TOLD <span></span></div>
+    <h1>Questline</h1>
+    <p class="title-subtitle">Every choice leaves a mark.</p>
+    <nav class="menu-actions" aria-label="Main menu">
+      <button id="playBtn" class="menu-primary"><span>▶</span> Begin your journey</button>
+      <button id="continueBtn" class="menu-secondary">Continue story <span>↗</span></button>
+      <button id="menuSettings" class="menu-secondary">Settings</button>
+      <button id="menuCredits" class="menu-secondary">Credits</button>
+    </nav>
+    <p id="menuNote" class="menu-note" aria-live="polite"></p>
+    <div class="title-footer"><span>THE CHRONICLES OF ELDORIA</span><span>VERSION 1.0</span></div>
+  </div>
+  <div class="title-orb orb-one"></div><div class="title-orb orb-two"></div>
+  <div class="title-landscape" aria-hidden="true"><div class="mountain mountain-back"></div><div class="mountain mountain-front"></div><div class="title-ground"></div></div>
+</section>
+<div id="studio" class="studio" hidden>
 <header>
-  <h1>NPC Dialogue Branching Studio</h1>
+  <h1>Questline <span class="studio-label">STORY STUDIO</span></h1>
   <button id="addNode">+ Add node</button>
   <button class="ghost" id="exportBtn">Export JSON</button>
   <button class="ghost" id="importBtn">Import JSON</button>
   <input type="file" id="importFile" accept=".json,application/json">
   <button class="ghost" id="exportJs">Copy as JS</button>
   <button class="danger" id="resetBtn">Reset</button>
+  <button class="ghost menu-return" id="menuBtn">Main menu</button>
   <span id="status" class="warn"></span>
 </header>
 <main>
@@ -24,12 +44,22 @@
     <div id="preview"></div>
   </aside>
 </main>
-
-<!-- Order matters: state first, then the modules that use it. -->
+</div>
 <script src="js/state.js"></script>
 <script src="js/editor.js"></script>
 <script src="js/player.js"></script>
 <script src="js/io.js"></script>
-<script>render(); restart();</script>
+<script>
+render(); restart();
+const titleScreen = document.querySelector('#titleScreen');
+const studio = document.querySelector('#studio');
+const menuNote = document.querySelector('#menuNote');
+function openStudio() { titleScreen.hidden = true; studio.hidden = false; document.body.classList.add('in-studio'); }
+document.querySelector('#playBtn').onclick = openStudio;
+document.querySelector('#continueBtn').onclick = openStudio;
+document.querySelector('#menuBtn').onclick = () => { studio.hidden = true; titleScreen.hidden = false; document.body.classList.remove('in-studio'); };
+document.querySelector('#menuSettings').onclick = () => { menuNote.textContent = 'Settings are coming soon.'; };
+document.querySelector('#menuCredits').onclick = () => { menuNote.textContent = 'A story crafted in Eldoria.'; };
+</script>
 </body>
 </html>
