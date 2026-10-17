@@ -31,19 +31,28 @@
 <header>
   <h1><button class="brand-home" id="menuBtn" aria-label="Return to main menu">Questline</button><span class="studio-label">STORY STUDIO</span></h1>
   <button id="addNode">+ Add node</button>
-  <button class="ghost" id="savesBtn">Save / Load</button>
-  <button class="ghost" id="exportBtn">Export JSON</button>
-  <button class="ghost" id="importBtn">Import JSON</button>
+  <div class="dropdown">
+    <button class="ghost" id="menuToggle" aria-haspopup="true" aria-expanded="false">☰ Menu ▾</button>
+    <div class="dropdown-panel" id="menuPanel" role="menu" hidden>
+      <button role="menuitem" id="savesBtn">Save / Load…</button>
+      <hr>
+      <button role="menuitem" id="newBtn">New blank story</button>
+      <hr>
+      <button role="menuitem" id="importBtn">Import JSON…</button>
+      <button role="menuitem" id="exportBtn">Export JSON</button>
+      <button role="menuitem" id="exportJs">Copy as JS</button>
+      <hr>
+      <button role="menuitem" id="menuItemHome">Main menu</button>
+    </div>
+  </div>
   <input type="file" id="importFile" accept=".json,application/json">
-  <button class="ghost" id="exportJs">Copy as JS</button>
-  <button class="danger" id="resetBtn">Reset</button>
+  <span id="status" class="warn"></span>
   <span class="zoom">
     <button class="ghost" id="zoomOut" title="Zoom out">−</button>
     <button class="ghost" id="zoomLabel" title="Reset to 100%">100%</button>
     <button class="ghost" id="zoomIn" title="Zoom in">+</button>
     <button class="ghost" id="zoomFit" title="Fit all nodes">Fit</button>
   </span>
-  <span id="status" class="warn"></span>
 </header>
 <main>
   <div id="canvasWrap"><div id="sizer"><div id="canvas"><svg id="links"></svg></div></div></div>
@@ -86,10 +95,12 @@ function openStudio() {
   render(); restart();
 }
 document.querySelector('#playBtn').onclick = () => {
-  openStudio();
+  if (hasSave() && !confirm('Begin a new story? This replaces your saved one.')) return;
+  data = blank(); resetView(); openStudio();
 };
 continueBtn.onclick = openStudio;
 document.querySelector('#menuBtn').onclick = showMenu;
+document.querySelector('#menuItemHome').onclick = showMenu;
 showMenu();
 document.querySelector('#menuSettings').onclick = () => { menuNote.textContent = 'Settings are coming soon.'; };
 document.querySelector('#menuCredits').onclick = () => { menuNote.textContent = 'A story crafted in Eldoria.'; };

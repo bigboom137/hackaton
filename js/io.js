@@ -40,8 +40,17 @@ $('#importFile').onchange = async e => {
   e.target.value = '';
 };
 
-$('#resetBtn').onclick = () => {
-  if (!confirm('Clear the current story and start with a blank canvas?')) return;
-  data = emptyStory(); activeId = null; selectedId = null;
+function replaceStory(fresh, question) {
+  if (!confirm(question)) return;
+  data = fresh(); activeId = null; selectedId = null;
   resetView(); render(); restart();
-};
+}
+$('#newBtn').onclick = () => replaceStory(blank, 'Start a blank story? Unsaved changes will be lost.');
+
+/* Toolbar dropdown: opens on click, closes on item pick, outside click or Esc. */
+const menuToggle = $('#menuToggle'), menuPanel = $('#menuPanel');
+function setMenu(open) { menuPanel.hidden = !open; menuToggle.setAttribute('aria-expanded', open); }
+menuToggle.onclick = e => { e.stopPropagation(); setMenu(menuPanel.hidden); };
+menuPanel.addEventListener('click', e => { if (e.target.closest('button')) setMenu(false); });
+document.addEventListener('click', e => { if (!e.target.closest('.dropdown')) setMenu(false); });
+window.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
