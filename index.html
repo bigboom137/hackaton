@@ -16,6 +16,7 @@
     <nav class="menu-actions" aria-label="Main menu">
       <button id="playBtn" class="menu-primary"><span>▶</span> Begin your journey</button>
       <button id="continueBtn" class="menu-secondary">Continue story <span>↗</span></button>
+      <button id="menuLoad" class="menu-secondary">Load save</button>
       <button id="menuSettings" class="menu-secondary">Settings</button>
       <button id="menuCredits" class="menu-secondary">Credits</button>
     </nav>
@@ -29,6 +30,7 @@
 <header>
   <h1>Questline <span class="studio-label">STORY STUDIO</span></h1>
   <button id="addNode">+ Add node</button>
+  <button class="ghost" id="savesBtn">Save / Load</button>
   <button class="ghost" id="exportBtn">Export JSON</button>
   <button class="ghost" id="importBtn">Import JSON</button>
   <input type="file" id="importFile" accept=".json,application/json">
@@ -51,11 +53,23 @@
   </aside>
 </main>
 </div>
+<div id="savesModal" class="modal" hidden>
+  <div class="modal-box" role="dialog" aria-labelledby="savesTitle">
+    <h2 id="savesTitle">Saves <button class="ghost" id="savesClose" title="Close">✕</button></h2>
+    <form id="saveForm">
+      <input id="saveName" placeholder="Name this save" maxlength="60">
+      <button type="submit">Save current story</button>
+    </form>
+    <ul id="savesList"></ul>
+    <p class="modal-note">Saves live in this browser only. Use Export JSON to back up or move a story.</p>
+  </div>
+</div>
 <script src="js/state.js"></script>
 <script src="js/editor.js"></script>
 <script src="js/view.js"></script>
 <script src="js/player.js"></script>
 <script src="js/io.js"></script>
+<script src="js/saves.js"></script>
 <script>
 const titleScreen = document.querySelector('#titleScreen');
 const studio = document.querySelector('#studio');

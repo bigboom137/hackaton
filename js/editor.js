@@ -101,10 +101,10 @@ canvas.addEventListener('click', e => {
 /* drag nodes */
 let drag = null;
 canvas.addEventListener('mousedown', e => {
-  const h = e.target.closest('.head');
-  if (!h || e.target.closest('input,button')) return;
+  const el = e.target.closest('.node');
+  if (!el || e.button !== 0 || e.target.closest('input,textarea,select,button')) return;
   e.preventDefault(); // don't start a text selection while dragging
-  const el = h.parentElement, n = data.nodes[el.dataset.id];
+  const n = data.nodes[el.dataset.id];
   drag = { el, n, mx: e.clientX, my: e.clientY, x0: n.x, y0: n.y };
 });
 window.addEventListener('mousemove', e => {
