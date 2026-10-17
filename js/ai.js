@@ -2,6 +2,7 @@
    The worker holds the Gemini key; this file asks it for dialogue, then checks and lays out
    whatever comes back, since a model can return ids that don't line up. */
 
+const AI_DEFAULT_URL = 'https://questline-ai.questline-ai.workers.dev'; // used when Settings → AI is blank
 let aiRunning = false;
 const aiToast = document.createElement('div');
 aiToast.className = 'ai-toast';
@@ -14,11 +15,7 @@ const clip = (v, max) => String(v ?? '').trim().slice(0, max);
 
 /* POST to the worker. Returns the parsed JSON, or null after showing the problem to the user. */
 async function callAI(body) {
-  const url = settings.aiUrl.trim();
-  if (!url) {
-    notify('Set up the AI server', 'AI writing needs the Questline AI worker. Deploy it (see worker/README.md), then paste its URL into Settings → AI.');
-    return null;
-  }
+  const url = settings.aiUrl.trim() || AI_DEFAULT_URL;
   if (aiRunning) return null;
   aiRunning = true; aiToast.hidden = false;
   const abort = new AbortController(), timer = setTimeout(() => abort.abort(), 90000);
@@ -147,4 +144,21 @@ async function aiExpand(id) {
   render();
 }
 
+/* ---------- entry points ---------- */
+
+/* Empty-canvas card: shown while the story is still blank, until dismissed. */
+const aiHint = $('#aiHint');
+let aiHintDismissed = false;
+function updateAiHint() { aiHint.hidden = aiHintDismissed || storyHasContent(); }
+canvas.addEventListener('input', updateAiHint);
+$('#aiHintClose').onclick = () => { aiHintDismissed = true; updateAiHint(); };
+
 $('#aiGenerateBtn').onclick = aiGenerate;
+$('#aiToolbarBtn').onclick = aiGenerate;
+$('#aiHintBtn').onclick = aiGenerate;
+// Home screen: open the studio first (generating needs the canvas visible to lay out), then ask.
+$('#menuAi').onclick = () => {
+  if (!hasSave()) { data = blank(); resetView(); }
+  openStudio();
+  aiGenerate();
+};

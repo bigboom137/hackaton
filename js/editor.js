@@ -36,6 +36,7 @@ function render() {
   updateBounds();
   drawLinks();
   validate();
+  updateAiHint();
   save();
 }
 
