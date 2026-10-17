@@ -115,12 +115,15 @@ canvas.addEventListener('input', e => {
   const n = data.nodes[el.dataset.id];
   if (e.target.dataset.f) n[e.target.dataset.f] = e.target.value;
   if (e.target.dataset.c) n.choices[+e.target.closest('.choice').dataset.i][e.target.dataset.c] = e.target.value;
+  const group = e.target.dataset.f
+    ? `field:${el.dataset.id}:${e.target.dataset.f}`
+    : `choice:${el.dataset.id}:${e.target.closest('.choice').dataset.i}:${e.target.dataset.c}`;
   if (e.target.tagName === 'TEXTAREA') {
     const before = el.offsetHeight;
     fitTextarea(e.target);
     if (el.offsetHeight !== before) { updateBounds(); drawLinks(); } // rows below moved, so do the arrows
   }
-  save();
+  save(group);
 });
 canvas.addEventListener('change', e => { if (e.target.dataset.c === 'to') render(); });
 

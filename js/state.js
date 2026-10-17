@@ -23,9 +23,75 @@ function load() {
   try { const s = localStorage.getItem(KEY); if (s) return JSON.parse(s); } catch (e) {}
   return sample();
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} }
+let historyUndoStack = [], historyRedoStack = [], historyCurrent = '';
+let historyGroup = null, historyGroupTime = 0, historyRestoring = false;
+
+function initializeHistory() {
+  historyCurrent = JSON.stringify(data);
+  updateHistoryControls();
+}
+function updateHistoryControls() {
+  const undo = $('#undoBtn'), redo = $('#redoBtn');
+  if (undo) undo.disabled = historyUndoStack.length === 0;
+  if (redo) redo.disabled = historyRedoStack.length === 0;
+}
+function recordHistory(group = null) {
+  if (historyRestoring) return;
+  const next = JSON.stringify(data);
+  if (next === historyCurrent) {
+    if (!group) historyGroup = null;
+    return;
+  }
+  const now = Date.now();
+  const coalesce = group && group === historyGroup && now - historyGroupTime < 900;
+  if (!coalesce) historyUndoStack.push(historyCurrent);
+  historyRedoStack.length = 0;
+  historyCurrent = next;
+  historyGroup = group;
+  historyGroupTime = now;
+  updateHistoryControls();
+}
+function restoreHistory(snapshot) {
+  historyRestoring = true;
+  try {
+    data = JSON.parse(snapshot);
+    historyCurrent = snapshot;
+    historyGroup = null;
+    if (selectedId && !data.nodes[selectedId]) selectedId = null;
+    if (activeId && !data.nodes[activeId]) activeId = null;
+    if (typeof render === 'function') render();
+    if (typeof restart === 'function') restart();
+  } finally {
+    historyRestoring = false;
+  }
+  updateHistoryControls();
+}
+function undo() {
+  if (!historyUndoStack.length) return;
+  historyRedoStack.push(historyCurrent);
+  restoreHistory(historyUndoStack.pop());
+}
+function redo() {
+  if (!historyRedoStack.length) return;
+  historyUndoStack.push(historyCurrent);
+  restoreHistory(historyRedoStack.pop());
+}
+function save(group = null) {
+  if (!historyRestoring) recordHistory(group);
+  try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {}
+}
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 
 let data = load();
 let activeId = null;
 let selectedId = null;
+initializeHistory();
+
+$('#undoBtn').onclick = undo;
+$('#redoBtn').onclick = redo;
+window.addEventListener('keydown', e => {
+  if ($('#studio').hidden || !(e.ctrlKey || e.metaKey) || e.altKey || document.querySelector('.modal:not([hidden])')) return;
+  const key = e.key.toLowerCase();
+  if (key === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
+  else if (key === 'y') { e.preventDefault(); redo(); }
+});
