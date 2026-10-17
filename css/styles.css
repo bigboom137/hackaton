@@ -55,7 +55,7 @@ main { flex:1; display:flex; min-height:0; }
 #sizer { position:relative; overflow:hidden; cursor:grab; background-image:radial-gradient(var(--grid-dot) 1px, transparent 1px); }
 #canvasWrap.panning #sizer { cursor:grabbing; }
 #canvas { position:absolute; left:0; top:0; width:0; height:0; transform-origin:0 0; cursor:default; }
-svg#links { position:absolute; left:0; top:0; width:1px; height:1px; overflow:visible; pointer-events:auto; }
+svg#links { position:absolute; left:0; top:0; width:1px; height:1px; overflow:visible; pointer-events:none; }
 .zoom { display:flex; gap:2px; margin-left:auto; }
 .dropdown { position:relative; }
 .dropdown-panel { position:absolute; top:calc(100% + 4px); left:0; z-index:20; min-width:200px; display:flex; flex-direction:column; padding:4px; background:var(--panel); border:1px solid var(--border); border-radius:6px; box-shadow:0 8px 24px var(--shadow-lg); }
@@ -82,8 +82,9 @@ svg#links { position:absolute; left:0; top:0; width:1px; height:1px; overflow:vi
 .choice .link-port.connected { background:var(--line); }
 .choice .link-port:hover { transform:translateY(-50%) scale(1.2); background:var(--accent); filter:none; }
 .link-unconnected { opacity:.5; }
-.choice-link { pointer-events:stroke; cursor:grab; }
-.choice-link:active { cursor:grabbing; }
+.link-hit { pointer-events:stroke; cursor:grab; }
+.link-hit:active { cursor:grabbing; }
+.choice-link { pointer-events:none; }
 .link-unconnected, .link-dragging { pointer-events:none; }
 .mini { padding:2px 6px; background:var(--ghost); color:var(--text); }
 #side { width:340px; background:var(--panel); border-left:1px solid var(--divider); display:flex; flex-direction:column; }

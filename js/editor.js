@@ -43,6 +43,17 @@ function render() {
 
 function drawLinks() {
   let html = `<defs><marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8z" style="fill:var(--line)"/></marker></defs>`;
+  const nodes = Object.entries(data.nodes).map(([id, n]) => {
+    const el = $('#el-' + id);
+    return { x0:n.x, y0:n.y, x1:n.x + (el?.offsetWidth || 260), y1:n.y + (el?.offsetHeight || 180) };
+  });
+  if (nodes.length) {
+    const x0 = Math.min(...nodes.map(n => n.x0)) - 24, y0 = Math.min(...nodes.map(n => n.y0)) - 24;
+    const x1 = Math.max(...nodes.map(n => n.x1)) + 24, y1 = Math.max(...nodes.map(n => n.y1)) + 24;
+    svg.style.left = `${x0}px`; svg.style.top = `${y0}px`;
+    svg.style.width = `${x1 - x0}px`; svg.style.height = `${y1 - y0}px`;
+    svg.setAttribute('viewBox', `${x0} ${y0} ${x1 - x0} ${y1 - y0}`);
+  }
   for (const [id, n] of Object.entries(data.nodes)) {
     const a = $('#el-' + id);
     n.choices.forEach((c, i) => {
@@ -59,7 +70,9 @@ function drawLinks() {
       const dx = Math.max(40, Math.abs(x2 - x1) / 2);
       const path = `M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}`;
       const cls = draggingThis ? 'link-dragging' : target ? 'choice-link' : 'link-unconnected';
-      html += `<path class="${cls}" data-from="${esc(id)}" data-choice="${i}" d="${path}" fill="none" stroke="${draggingThis ? 'var(--accent)' : 'var(--line)'}" stroke-width="${draggingThis ? 3 : 2}" marker-end="url(#ah)" ${target || draggingThis ? '' : 'stroke-dasharray="4 5"'}/>`;
+      const attrs = `data-from="${esc(id)}" data-choice="${i}" d="${path}"`;
+      if (target && !draggingThis) html += `<path class="link-hit" ${attrs} fill="none" stroke="transparent" stroke-width="14"/>`;
+      html += `<path class="${cls}" ${attrs} fill="none" stroke="${draggingThis ? 'var(--accent)' : 'var(--line)'}" stroke-width="2" marker-end="url(#ah)" ${target || draggingThis ? '' : 'stroke-dasharray="4 5"'}/>`;
     });
   }
   svg.innerHTML = html;
@@ -105,7 +118,7 @@ canvas.addEventListener('pointerdown', e => {
   beginLinkDrag(node.dataset.id, Number(port.dataset.linkPort), e);
 });
 svg.addEventListener('pointerdown', e => {
-  const path = e.target.closest('path.choice-link[data-from][data-choice]');
+  const path = e.target.closest('path.link-hit[data-from][data-choice]');
   if (!path) return;
   const node = $('#el-' + path.dataset.from);
   const row = node?.querySelectorAll('.choice')[Number(path.dataset.choice)];
