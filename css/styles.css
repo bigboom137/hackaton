@@ -94,12 +94,12 @@ input[type=file] { display:none; }
 /* Questline title screen */
 [hidden] { display: none !important; }
 body { min-height:100vh; height:100vh; overflow:hidden; }
-.title-screen { position:relative; isolation:isolate; display:grid; place-items:center; min-height:100vh; overflow:hidden; color:var(--home-text); background-color:var(--home-color); background-image:var(--home-shade),url("../assets/home-background.svg"),var(--home-fallback); background-size:cover; background-position:center; }
+.title-screen { position:relative; isolation:isolate; display:grid; place-items:center; min-height:100vh; overflow:hidden; color:var(--home-text); background-color:var(--home-color); background-image:var(--home-shade),url("../assets/home-background.png"),url("../assets/home-background.svg"),var(--home-fallback); background-size:cover; background-position:center; }
 /* Separate daytime art for light mode (urls are kept out of custom properties so they resolve relative to this file). */
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) .title-screen { background-image:var(--home-shade),url("../assets/home-background-light.svg"),var(--home-fallback); }
+  :root:not([data-theme="dark"]) .title-screen { background-image:var(--home-shade),url("../assets/home-background-light.png"),url("../assets/home-background-light.svg"),var(--home-fallback); }
 }
-:root[data-theme="light"] .title-screen { background-image:var(--home-shade),url("../assets/home-background-light.svg"),var(--home-fallback); }
+:root[data-theme="light"] .title-screen { background-image:var(--home-shade),url("../assets/home-background-light.png"),url("../assets/home-background-light.svg"),var(--home-fallback); }
 .title-screen:before { content:""; position:absolute; inset:0; z-index:-1; opacity:var(--home-stars); background-image:radial-gradient(1px 1px at 14% 22%,#fff 99%,transparent),radial-gradient(1px 1px at 78% 19%,#f3dfb0 99%,transparent),radial-gradient(1px 1px at 67% 42%,#fff 99%,transparent),radial-gradient(1px 1px at 24% 56%,#f3dfb0 99%,transparent),radial-gradient(1px 1px at 89% 62%,#fff 99%,transparent),radial-gradient(1px 1px at 42% 12%,#fff 99%,transparent); background-size:440px 320px; }
 .title-grain { position:absolute; inset:0; opacity:var(--home-grain); pointer-events:none; background-image:repeating-linear-gradient(0deg,transparent 0 3px,#fff 4px,transparent 5px); mask-image:linear-gradient(transparent,#000); }
 .title-content { position:relative; z-index:2; width:min(90vw,540px); margin-top:-5vh; text-align:center; }
