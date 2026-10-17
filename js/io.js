@@ -40,4 +40,8 @@ $('#importFile').onchange = async e => {
   e.target.value = '';
 };
 
-$('#resetBtn').onclick = () => { if (confirm('Discard everything and load the sample?')) { data = sample(); resetView(); render(); restart(); } };
+$('#resetBtn').onclick = () => {
+  if (!confirm('Clear the current story and start with a blank canvas?')) return;
+  data = emptyStory(); activeId = null; selectedId = null;
+  resetView(); render(); restart();
+};

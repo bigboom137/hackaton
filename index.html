@@ -11,7 +11,8 @@
   <div class="title-grain" aria-hidden="true"></div>
   <div class="title-content">
     <div class="eyebrow"><span></span> A TALE WAITING TO BE TOLD <span></span></div>
-    <h1>Questline</h1>
+    <!-- Add your home logo at assets/questline-logo.png. -->
+    <h1><img class="title-logo" src="assets/questline-logo.png" alt="Questline" onload="this.classList.add('is-loaded'); this.nextElementSibling.hidden=true" onerror="this.remove()"><span>Questline</span></h1>
     <p class="title-subtitle">Every choice leaves a mark.</p>
     <nav class="menu-actions" aria-label="Main menu">
       <button id="playBtn" class="menu-primary"><span>▶</span> Begin your journey</button>
@@ -85,8 +86,7 @@ function openStudio() {
   render(); restart();
 }
 document.querySelector('#playBtn').onclick = () => {
-  if (hasSave() && !confirm('Begin a new story? This replaces your saved one.')) return;
-  data = sample(); resetView(); openStudio();
+  openStudio();
 };
 continueBtn.onclick = openStudio;
 document.querySelector('#menuBtn').onclick = showMenu;

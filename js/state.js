@@ -14,6 +14,10 @@ function sample() {
   };
 }
 
+function emptyStory() {
+  return { start: '', counter: 0, nodes: {} };
+}
+
 function load() {
   try { const s = localStorage.getItem(KEY); if (s) return JSON.parse(s); } catch (e) {}
   return sample();
@@ -23,3 +27,4 @@ function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').
 
 let data = load();
 let activeId = null;
+let selectedId = null;
