@@ -42,13 +42,46 @@ function render() {
     el.dataset.id = id;
     canvas.appendChild(el);
   }
+  updateNodeSearchList();
   canvas.querySelectorAll('.node textarea').forEach(fitTextarea);
   updateBounds();
   drawLinks();
   validate();
   updateAiHint();
+  refreshPreview();
   save();
 }
+
+function updateNodeSearchList() {
+  const list = $('#nodeSearchList');
+  list.replaceChildren();
+  for (const [id, node] of Object.entries(data.nodes)) {
+    const option = document.createElement('option');
+    option.value = id;
+    option.label = node.speaker ? `${node.speaker} — ${id}` : id;
+    list.appendChild(option);
+  }
+}
+
+function jumpFromSearch() {
+  const field = $('#nodeSearch'), query = field.value.trim().toLocaleLowerCase();
+  if (!query) return;
+  const entries = Object.entries(data.nodes);
+  const found = entries.find(([id]) => id.toLocaleLowerCase() === query)
+    || entries.find(([, node]) => (node.speaker || '').toLocaleLowerCase() === query)
+    || entries.find(([id]) => id.toLocaleLowerCase().includes(query))
+    || entries.find(([, node]) => (node.speaker || '').toLocaleLowerCase().includes(query));
+  if (!found) { showActionToast(`No node found for “${field.value.trim()}”.`); return; }
+  const [id] = found;
+  field.value = id;
+  jumpToNode(id);
+  showActionToast(`Jumped to ${id}.`);
+}
+
+$('#nodeSearch').addEventListener('change', jumpFromSearch);
+$('#nodeSearch').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); jumpFromSearch(); }
+});
 
 function drawLinks() {
   let html = `<defs><marker id="ah" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8z" style="fill:var(--line)"/></marker></defs>`;
@@ -124,6 +157,7 @@ canvas.addEventListener('input', e => {
     if (el.offsetHeight !== before) { updateBounds(); drawLinks(); } // rows below moved, so do the arrows
   }
   save(group);
+  refreshPreview();
 });
 canvas.addEventListener('change', e => { if (e.target.dataset.c === 'to') render(); });
 

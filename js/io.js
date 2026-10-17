@@ -16,11 +16,12 @@ $('#exportBtn').onclick = () => {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(exportData(), null, 2)], { type: 'application/json' }));
   a.download = 'dialogue.json'; a.click(); URL.revokeObjectURL(a.href);
+  showActionToast('Exported dialogue.json.');
 };
 
 $('#exportJs').onclick = async () => {
   const code = 'const dialogue = ' + JSON.stringify(exportData(), null, 2) + ';\n';
-  try { await navigator.clipboard.writeText(code); $('#status').textContent = 'Copied!'; } catch (e) { showText('Copy as JS', 'Clipboard access was blocked. Copy the code below.', code); }
+  try { await navigator.clipboard.writeText(code); showActionToast('Dialogue code copied.'); } catch (e) { showText('Copy as JS', 'Clipboard access was blocked. Copy the code below.', code); }
 };
 
 $('#importBtn').onclick = () => $('#importFile').click();
@@ -36,6 +37,7 @@ $('#importFile').onchange = async e => {
     const nums = Object.keys(nodes).map(k => parseInt(k.replace(/\D/g, '')) || 0);
     data = { start: j.start, nodes, counter: Math.max(0, ...nums) + Object.keys(nodes).length };
     resetView(); render(); restart();
+    showActionToast(`Imported ${Object.keys(nodes).length} nodes from ${f.name}.`);
   } catch (err) { notify('Could not import', `That file isn't a valid dialogue export (${err.message}).`); }
   e.target.value = '';
 };

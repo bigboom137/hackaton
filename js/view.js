@@ -62,6 +62,17 @@ function fitView() {
   $('#zoomLabel').textContent = Math.round(zoom * 100) + '%';
 }
 
+/* Center one node in the canvas viewport and select it. */
+function jumpToNode(id) {
+  const el = $('#el-' + id), n = data.nodes[id];
+  if (!el || !n) return false;
+  selectNode(id);
+  const x = n.x + el.offsetWidth / 2 - wrap.clientWidth / zoom / 2;
+  const y = n.y + el.offsetHeight / 2 - wrap.clientHeight / zoom / 2;
+  updateBounds(x, y);
+  return true;
+}
+
 /* Forget the old origin and highlights, e.g. after loading a different tree. */
 function resetView() { bx = by = null; selectedId = null; activeId = null; }
 

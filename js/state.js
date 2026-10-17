@@ -25,6 +25,22 @@ function load() {
 }
 let historyUndoStack = [], historyRedoStack = [], historyCurrent = '';
 let historyGroup = null, historyGroupTime = 0, historyRestoring = false;
+let actionToastTimer = null;
+
+function setSaveStatus(message, state) {
+  const el = $('#saveStatus');
+  if (!el) return;
+  el.textContent = message;
+  el.dataset.state = state;
+}
+function showActionToast(message) {
+  const el = $('#actionToast');
+  if (!el) return;
+  el.textContent = message;
+  el.hidden = false;
+  clearTimeout(actionToastTimer);
+  actionToastTimer = setTimeout(() => { el.hidden = true; }, 2800);
+}
 
 function initializeHistory() {
   historyCurrent = JSON.stringify(data);
@@ -78,7 +94,10 @@ function redo() {
 }
 function save(group = null) {
   if (!historyRestoring) recordHistory(group);
-  try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {}
+  try {
+    localStorage.setItem(KEY, JSON.stringify(data));
+    setSaveStatus('Saved in this browser', 'saved');
+  } catch (e) { setSaveStatus('Could not save locally', 'error'); }
 }
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 
@@ -89,7 +108,21 @@ initializeHistory();
 
 $('#undoBtn').onclick = undo;
 $('#redoBtn').onclick = redo;
+const shortcutsModal = $('#shortcutsModal');
+let shortcutsReturnFocus = null;
+function closeShortcuts() {
+  shortcutsModal.hidden = true;
+  shortcutsReturnFocus?.focus?.();
+}
+$('#shortcutsBtn').onclick = () => {
+  shortcutsReturnFocus = document.activeElement;
+  shortcutsModal.hidden = false;
+  $('#shortcutsClose').focus();
+};
+$('#shortcutsClose').onclick = closeShortcuts;
+shortcutsModal.addEventListener('click', e => { if (e.target === shortcutsModal) closeShortcuts(); });
 window.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !shortcutsModal.hidden) { closeShortcuts(); return; }
   if ($('#studio').hidden || !(e.ctrlKey || e.metaKey) || e.altKey || document.querySelector('.modal:not([hidden])')) return;
   const key = e.key.toLowerCase();
   if (key === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); }
