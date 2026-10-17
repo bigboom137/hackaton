@@ -30,7 +30,9 @@ function typeLine(el, text, done) {
     finish() { this.stop(); el.textContent = text; done(); },
   };
 }
-preview.addEventListener('click', () => typing?.finish()); // click to skip the typing
+// Click to skip the typing. Not for reply buttons: their click starts the next line,
+// then bubbles up here and would skip it instantly.
+preview.addEventListener('click', e => { if (!e.target.closest('button')) typing?.finish(); });
 
 function visit(id) {
   const n = data.nodes[id];
