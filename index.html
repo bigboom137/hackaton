@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Questline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,400;0,500;0,700;1,400&display=swap">
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -74,6 +77,7 @@
   </div>
 </div>
 <script src="js/state.js"></script>
+<script src="js/dialog.js"></script>
 <script src="js/editor.js"></script>
 <script src="js/view.js"></script>
 <script src="js/player.js"></script>
@@ -94,8 +98,8 @@ function openStudio() {
   titleScreen.hidden = true; studio.hidden = false; document.body.classList.add('in-studio');
   render(); restart();
 }
-document.querySelector('#playBtn').onclick = () => {
-  if (hasSave() && !confirm('Begin a new story? This replaces your saved one.')) return;
+document.querySelector('#playBtn').onclick = async () => {
+  if (hasSave() && !await ask('Begin a new story?', 'This replaces the story you were working on. Named saves are kept.', { ok: 'Begin', danger: true })) return;
   data = blank(); resetView(); openStudio();
 };
 continueBtn.onclick = openStudio;

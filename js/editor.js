@@ -107,15 +107,18 @@ canvas.addEventListener('click', e => {
     n.choices.push({ text: '', to });
   }
   else if (act === 'rmchoice') n.choices.splice(+e.target.closest('.choice').dataset.i, 1);
-  else if (act === 'del') {
-    if (!confirm(`Delete node ${id}?`)) return;
-    delete data.nodes[id];
-    if (selectedId === id) selectedId = null;
-    for (const o of Object.values(data.nodes)) o.choices.forEach(c => { if (c.to === id) c.to = ''; });
-    if (data.start === id) data.start = Object.keys(data.nodes)[0] || '';
-  }
+  else if (act === 'del') { deleteNode(id); return; }
   render();
 });
+
+async function deleteNode(id) {
+  if (!await ask(`Delete node ${id}?`, 'Choices that lead here will become conversation endings.', { ok: 'Delete', danger: true })) return;
+  delete data.nodes[id];
+  if (selectedId === id) selectedId = null;
+  for (const o of Object.values(data.nodes)) o.choices.forEach(c => { if (c.to === id) c.to = ''; });
+  if (data.start === id) data.start = Object.keys(data.nodes)[0] || '';
+  render();
+}
 
 /* drag nodes */
 let drag = null;

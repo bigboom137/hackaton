@@ -7,31 +7,31 @@ function readSaves() {
 }
 function writeSaves(saves) {
   try { localStorage.setItem(SAVES_KEY, JSON.stringify(saves)); return true; }
-  catch (e) { alert('Could not save: browser storage is full or blocked.'); return false; }
+  catch (e) { notify('Could not save', 'Browser storage is full or blocked. Try Export JSON instead.'); return false; }
 }
 
-function saveSlot(name) {
+async function saveSlot(name) {
   const saves = readSaves();
   const existing = saves.find(s => s.name === name);
-  if (existing && !confirm(`Overwrite the save "${name}"?`)) return;
+  if (existing && !await ask('Overwrite save?', `A save named "${name}" already exists.`, { ok: 'Overwrite', danger: true })) return;
   const slot = { name, savedAt: Date.now(), data: JSON.parse(JSON.stringify(data)) };
   if (existing) Object.assign(existing, slot); else saves.unshift(slot);
   if (writeSaves(saves)) renderSaves();
 }
 
-function loadSlot(i) {
+async function loadSlot(i) {
   const slot = readSaves()[i]; if (!slot) return;
   const inStudio = !studio.hidden;
-  if (inStudio && !confirm(`Load "${slot.name}"? Unsaved changes to the current story will be lost.`)) return;
+  if (inStudio && !await ask(`Load "${slot.name}"?`, 'Unsaved changes to the current story will be lost.', { ok: 'Load' })) return;
   data = JSON.parse(JSON.stringify(slot.data));
   resetView();
   closeSaves();
   if (inStudio) { render(); restart(); } else openStudio();
 }
 
-function deleteSlot(i) {
+async function deleteSlot(i) {
   const saves = readSaves();
-  if (!saves[i] || !confirm(`Delete the save "${saves[i].name}"?`)) return;
+  if (!saves[i] || !await ask('Delete save?', `"${saves[i].name}" will be permanently deleted.`, { ok: 'Delete', danger: true })) return;
   saves.splice(i, 1);
   if (writeSaves(saves)) renderSaves();
 }
